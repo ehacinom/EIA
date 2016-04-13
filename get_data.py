@@ -1,2 +1,92 @@
 #!/usr/local/bin/python
 
+import json
+import urllib
+from datetime import datetime
+
+def load_json(url):
+    """
+    Input:  str url
+    Output: dict json data
+    """
+    url = urllib.urlopen(url)
+    return json.load(url)
+
+def update_json(api_key, last_update, cid=0):
+    """
+    INPUT
+    str api_key
+    datetime.datetime() last_update
+    (optional) str cid
+    
+    If no cid is supplied, we check all the default category_id to 
+    retrieve all series_IDs we need to update
+    """
+    
+    # default if no cid input
+    category_id = {"1": "all fuels", "4": "coal", 
+                   "7": "petroleum liquids", "8": "petroleum coke",
+                   "9": "natural gas", "10": "other gases",
+                   "11": "nuclear", 
+                   "12": "conventional hydroelectric",
+                   "19": "hydro-electric pumped storage",
+                   "13": "other renewables (total)", "14": "wind",
+                   "15": "all utility-scale solar", 
+                   "1718408": "all solar",
+                   "1718400": "utility-scale photovoltaic",
+                   "1718409": "distributed solar", 
+                   "1718401": "utility-scale thermal",
+                   "17": "geothermal",
+                   "16": "wood and wood-derived fuels", 
+                   "18": "other biomass",
+                   "20": "other"}
+    if cid: category_id = list(cid)
+    
+    # urls used
+    url_cid = "http://api.eia.gov/category/?api_key=" + api_key + "&category_id="
+    url_sid0 = "http://api.eia.gov/series/?series_id="
+    url_sid1 = "&api_key=" + api_key + "&out=json"
+
+    # today's date
+    update_date = datetime.now()
+
+    # find and update series
+    series_updated, series_total = 0, 0
+    for cid in category_id:
+        
+        # url to search for series_id
+        url0 = url_cid + cid
+
+        # retrieve series_id
+        for cat in load_json(url0)["category"]["childseries"]:
+            series_total += 1
+            
+            # check last update of these series
+            last = datetime.strptime(cat["updated"], "%d-%b-%y %I.%M.%S %p")
+
+            # retrieve series_id only if last_update < last
+            if last < last_update: continue
+
+            # retrieve series_id
+            series_updated += 1
+            series_id = cat["series_id"]
+            
+            # retrieve location
+            print series_id
+
+            # retrieve units
+            if cat["units"] != "thousand megawatthours":
+                print "WARNINGL units are {} for series_id {}" \
+                      .format(cat["units"], series_id)
+            
+            # url to get series
+            url1 = url_sid0 + series_id + url_sid1
+            for s in load_json(url1)["series"]:
+                print s
+                break
+            break
+
+    print "Updated {}/{} series.".format(series_updated, series_total)
+    return update_date
+
+        
