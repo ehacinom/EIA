@@ -3,6 +3,10 @@
 import json
 import urllib
 from datetime import datetime
+import requests
+import re 
+from collections import defaultdict
+
 
 def load_json(url):
     """
@@ -20,17 +24,24 @@ def update_json(api_key, last_update, cid=0):
     (optional) str cid
     
     If no cid is supplied, we check all the default category_id to 
-    retrieve all series_IDs we need to update
+    retrieve all series_IDs we need to update.
+    
+    API documentation for EIA: http://www.eia.gov/opendata/commands.cfm
+    
     """
     
     # default if no cid input
-    category_id = {"1": "all fuels", "4": "coal", 
-                   "7": "petroleum liquids", "8": "petroleum coke",
-                   "9": "natural gas", "10": "other gases",
+    category_id = {"1": "all fuels", 
+                   "4": "coal", 
+                   "7": "petroleum liquids", 
+                   "8": "petroleum coke",
+                   "9": "natural gas", 
+                   "10": "other gases",
                    "11": "nuclear", 
                    "12": "conventional hydroelectric",
                    "19": "hydro-electric pumped storage",
-                   "13": "other renewables (total)", "14": "wind",
+                   "13": "other renewables (total)", 
+                   "14": "wind",
                    "15": "all utility-scale solar", 
                    "1718408": "all solar",
                    "1718400": "utility-scale photovoltaic",
@@ -46,14 +57,15 @@ def update_json(api_key, last_update, cid=0):
     url_cid = "http://api.eia.gov/category/?api_key=" + api_key + "&category_id="
     url_sid0 = "http://api.eia.gov/series/?series_id="
     url_sid1 = "&api_key=" + api_key + "&out=json"
+    url_sid = "http://api.eia.gov/series/" # for post
 
     # today's date
     update_date = datetime.now()
 
     # find and update series
     series_updated, series_total = 0, 0
-    for cid in category_id:
-        
+    series_list = []
+    for cid in category_id:        
         # url to search for series_id
         url0 = url_cid + cid
 
@@ -72,7 +84,7 @@ def update_json(api_key, last_update, cid=0):
             series_id = cat["series_id"]
             
             # retrieve location
-            print series_id
+            series_list.append(series_id)
 
             # retrieve units
             if cat["units"] != "thousand megawatthours":
@@ -80,13 +92,32 @@ def update_json(api_key, last_update, cid=0):
                       .format(cat["units"], series_id)
             
             # url to get series
-            url1 = url_sid0 + series_id + url_sid1
-            for s in load_json(url1)["series"]:
-                print s
-                break
-            break
+            # url1 = url_sid0 + series_id + url_sid1
+            # for s in load_json(url1)["series"]:
+            #     print s
+            #     break
+            # break
+    
+    # sort series_list
+    cate_area_freq = re.compile(r"ELEC\.GEN\.(.{2,4})-(.{2,3})-99\.([A-Z])")
+    sd = defaultdict(lambda: defaultdict(list))
+    for sl in series_list:
+        (cate, area, freq) = cate_area_freq.match(sl).groups()
+        
+        # easiest to filter on frequency and areas, will show all categories!
+        sd[freq][area].append(sl)
+    
+    print sd
+    return
+    
+    # get the timeseries using POST protocol
+    series_list = ';'.join(series_list)
+    print series_list
+    params = {"series_id": series_list, "api_key": api_key, "out": "json"}
+    r = requests.post(url_sid, params)
+    print r.content
 
     print "Updated {}/{} series.".format(series_updated, series_total)
-    return update_date
-
+    print "Newest category: {}".format(cid)
         
+    return update_date
