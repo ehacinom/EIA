@@ -62,7 +62,7 @@ def update_json(api_key, last_update, cid=0):
     # today's date
     update_date = datetime.now()
 
-    # find and update series
+    # find series to update
     series_updated, series_total = 0, 0
     series_list = []
     for cid in category_id:        
@@ -97,8 +97,11 @@ def update_json(api_key, last_update, cid=0):
             #     print s
             #     break
             # break
-    
-    # sort series_list
+
+        print "Updated {}/{} series.".format(series_updated, series_total)
+        print "Newest category: {}: {}".format(cid, category_id[cid])
+
+    # sort series_list by category/area/frequency
     cate_area_freq = re.compile(r"ELEC\.GEN\.(.{2,4})-(.{2,3})-99\.([A-Z])")
     sd = defaultdict(lambda: defaultdict(list))
     for sl in series_list:
@@ -107,17 +110,22 @@ def update_json(api_key, last_update, cid=0):
         # easiest to filter on frequency and areas, will show all categories!
         sd[freq][area].append(sl)
     
-    print sd
-    return
-    
     # get the timeseries using POST protocol
-    series_list = ';'.join(series_list)
-    print series_list
-    params = {"series_id": series_list, "api_key": api_key, "out": "json"}
-    r = requests.post(url_sid, params)
-    print r.content
+    # this is not updatable (!!!)
+    # must fix later
+    
+    dataset = defaultdict(dict)
+    for f in sd:
+        for a in sd[f]:
+            series = ';'.join(sd[f][a])
+            params = {"series_id": series, "api_key": api_key, "out": "json"}
+            r = requests.post(url_sid, params)
+            
+            # save to dataset
+            dataset[f][a] = r.content
 
-    print "Updated {}/{} series.".format(series_updated, series_total)
-    print "Newest category: {}".format(cid)
-        
+    # write to file
+    with open('dataset.json', 'w') as f:
+        json.dump(dataset, f)
+    
     return update_date
