@@ -205,6 +205,7 @@ def update_series(api_key, date_last_update, series_dict):
 
 def update_data(api_key, date_last_update, cid=0):
     """
+    
     Runs the show.
     
     Currently, updating is not precise but overcompensates. This will be 
@@ -213,6 +214,25 @@ def update_data(api_key, date_last_update, cid=0):
     helpful to keep tabs on updates.
     
     API documentation for EIA: http://www.eia.gov/opendata/commands.cfm
+    
+    Example usage
+    =============
+    
+    # import
+    from get_data import update_data
+    from datetime import datetime
+    
+    # input
+    api_key = "XXX"
+    last_update = datetime(1990, 01, 01, 00, 00, 01, 0)
+
+    # run both
+    start = datetime.now()
+    last_update = update_data(api_key, last_update)
+    
+    # output 
+    print last_update
+    print "elapsed: {}".format(datetime.now()-start)
     
     """
     
