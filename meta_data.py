@@ -10,15 +10,15 @@ def datafiles(filename="./data/datafiles.json", directory="data"):
     Saves to filename the names of the files in /data, created by
     get_data.py. Sorted by frequency "A", "Q", "M" (annual/quarter/month).
     
-    Note: sometimes Mac creates .DS_Store and it doesn't expect it.
-    I fixed with a defaultdict call, but it's annoying that .DS_Store is 
-    there.
+    Note: defaultdict call to deal with unexpected files, like
+    - .DS_Store
+    - datafiles.json :)
     
     """
     
     files = defaultdict(list)
     for d in os.listdir(directory):
-        files[d[0]].append(d)
+        files[d[0]].append(directory+"/"+d)
     
     with open(filename, 'wb') as f:
         json.dump(files, f)

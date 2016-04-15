@@ -1,49 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <title>D3!</title>
-        <script type="text/javascript" src="d3/d3.v3.js"></script>
-        <!--<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>-->
-    </head>
-    <body>
-      <p>Is this working?</p>
-      <script type="text/javascript">
-       // svg
-       // http://bl.ocks.org/mbostock/3019563
-          var margin = {top: 20, right: 10, bottom: 20, left: 10};
-          var width = 960 - margin.left - margin.right,
-             height = 500 - margin.top - margin.bottom;
-          var svg = d3.select("body").append("svg")
-             .attr("width", width + margin.left + margin.right)
-             .attr("height", height + margin.top + margin.bottom)
-             .append("g")
-             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+<head>
+<meta charset="utf-8">
+<title>D3!</title>
+<script type="text/javascript" src="d3/d3.v3.js"></script>
+<!--<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>-->
+</head>
+<body>
+<p>Is this working?</p>
 
-       // load data
-          
-          
-          
-          
-          
-          
-       // graph data
-          var dataset;
-          d3.json("dataset.json", function(error, data) {
-             
-             if (error) {
-                console.log(error);
-             } else {
-                // hand off data to global var dataset for access
-                dataset = data;
-             
-                // call functions that generate visualizations
+<script type="text/javascript">
+    // svg
+    // http://bl.ocks.org/mbostock/3019563
+    var margin = {top: 20, right: 10, bottom: 20, left: 10};
+    var width = 960 - margin.left - margin.right, 
+        height = 500 - margin.top - margin.bottom;
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // global var
+    var datafiles;
+    var frequency = "A"; // ("A", "Q", "M")
+    var bubbles = [];
+
+    // load datafiles
+    d3.json("data/datafiles.json", function (error, data) {
+        if (error) throw error;
+        
+        // list of files with data
+        datafiles = data;
+        
+        // default visualization
+        load_data(frequency);
+        
+    });
+
+    var load_data = function(frequency) {
+        df = datafiles[frequency];
+        console.log(df);
+        for (i = 0; i < df.length; i++) {
+            d3.json(df[i], function(error, data) {
+    
+                if (error) throw error;
                 
+                // hand off to global var for access
+                bubbles[i] = data;
                 
-             }
-             
-             
-          });
-        </script>
-    </body>
+                // generate visualizations
+                // ARE WE SURE??
+            });
+        }
+        console.log(i);
+    }
+</script>
+
+</body>
 </html>
