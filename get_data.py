@@ -157,7 +157,7 @@ def update_series(api_key, date_last_update, series_dict):
     print '\nThree progress bars, one for each frequency.'
     for f in series_dict:
         for a in tqdm(series_dict[f]):
-            if f != 'M' : continue
+            #if f != 'A' : continue
 
             # list of series_ids
             ids = series_dict[f][a]
@@ -173,9 +173,10 @@ def update_series(api_key, date_last_update, series_dict):
             
             # save to file
             filename = "data/" + f + a + '.json'
+            key = ("\"p\"", "\"c\"") # parent, children
             with open(filename, 'wb') as fn:
                 index = -1
-                fn.write("{")
+                fn.write("{" + key[0] + ":\"" + a + "\"," + key[1] + ":[")
                 
                 for chunk in r.iter_lines(delimiter='[['):
                     
@@ -187,19 +188,23 @@ def update_series(api_key, date_last_update, series_dict):
                     if index < 0:
                         index += 1
                         continue
+                    
+                    # data order == series order (WOW USEFUL)
+                    name = "{" + key[0] + ":\"" + ids[index] + "\"," + \
+                           key[1] + ":"
 
-                    # data order == series order
-                    key = "\"" + ids[index] + "\":"
-                    fn.write(key)
-
-                    # search stream for data
-                    chunk = "[[" + stream.match(chunk).groups()[0] + "]]"
-                    fn.write(chunk)
+                    # search stream for data and recast
+                    chunk = stream.match(chunk).groups()[0]
+                    chunk = [":".join(c.split(",")) for c in chunk.split("],[")]
+                    chunk = "{" + ",".join(chunk) + "}"
+                    
+                    # write
+                    fn.write(name + chunk + "}")
                     
                     index += 1
                     if index < length: fn.write(",")
 
-                fn.write("}")
+                fn.write("]}")
 
     return update_date
 

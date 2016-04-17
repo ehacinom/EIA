@@ -50,11 +50,11 @@ def aggregate(filename="./data/datafiles.json",
     
     files = list_files(filename, directory)
     for freq, flist in files.iteritems():
-        if freq not in data: continue
+        if freq not in ("A", "Q", "M"): continue
         for fn in flist:
             with open(fn, 'r') as f:
                 tag = fn[5:-5]
-                data[freq][tag] = json.load(f)
+                print tag
 
     # write
     write_json(out, data)
