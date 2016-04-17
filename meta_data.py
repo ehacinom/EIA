@@ -37,24 +37,28 @@ def list_files(filename="./data/datafiles.json", directory="data"):
     
     return files
 
-def aggregate(filename="./data/datafiles.json", 
-              directory="data",
-              out="./data/data.json"):
+def aggregate(filename = "./data/datafiles.json", 
+              directory = "data",
+              out = "./data/data.json",
+              key = ("p", "c")):
     """
     
     Aggregate all the files in one file.
     
     """
     
-    data = {"A":{}, "Q": {}, "M": {}}
+    data = []
     
     files = list_files(filename, directory)
     for freq, flist in files.iteritems():
         if freq not in ("A", "Q", "M"): continue
+        obj = []
         for fn in flist:
             with open(fn, 'r') as f:
-                tag = fn[5:-5]
-                print tag
+                #tag = fn[6:-5]
+                obj.append(json.load(f))
+        data.append({key[0]: freq, key[1]: obj})
+    data = {key[0]: "electricity", key[1]: data}
 
     # write
     write_json(out, data)

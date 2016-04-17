@@ -121,12 +121,13 @@ def search_categories(api_key, date_last_update, cid=0):
 
     return series_dict
 
-def update_series(api_key, date_last_update, series_dict):
+def update_series(api_key, date_last_update, series_dict, key):
     """
     INPUT
     str api_key
     datetime date_last_update
     dict series_dict, from search_categories()
+    key: 3-tuple of string parent/child/value identifiers
     
     OUTPUT
     datetime update_date, date of current update
@@ -173,7 +174,6 @@ def update_series(api_key, date_last_update, series_dict):
             
             # save to file
             filename = "data/" + f + a + '.json'
-            key = ("\"p\"", "\"c\"") # parent, children
             with open(filename, 'wb') as fn:
                 index = -1
                 fn.write("{" + key[0] + ":\"" + a + "\"," + key[1] + ":[")
@@ -191,11 +191,13 @@ def update_series(api_key, date_last_update, series_dict):
                     
                     # data order == series order (WOW USEFUL)
                     name = "{" + key[0] + ":\"" + ids[index] + "\"," + \
-                           key[1] + ":"
+                           key[2] + ":"
 
                     # search stream for data and recast
+                    # it's not pretty
                     chunk = stream.match(chunk).groups()[0]
                     chunk = [":".join(c.split(",")) for c in chunk.split("],[")]
+                    chunk = [c[:1] + "_" + c[1:] for c in chunk]
                     chunk = "{" + ",".join(chunk) + "}"
                     
                     # write
@@ -208,7 +210,7 @@ def update_series(api_key, date_last_update, series_dict):
 
     return update_date
 
-def update_data(api_key, date_last_update, cid=0):
+def update_data(api_key, date_last_update, cid=0, key = ("\"p\"", "\"c\"", "\"v\"")):
     """
     
     Runs the show.
@@ -242,6 +244,6 @@ def update_data(api_key, date_last_update, cid=0):
     """
     
     series_dict = search_categories(api_key, date_last_update, cid)
-    update_date = update_series(api_key, date_last_update, series_dict)
+    update_date = update_series(api_key, date_last_update, series_dict, key)
     
     return update_date
