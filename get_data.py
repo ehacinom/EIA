@@ -158,7 +158,7 @@ def update_series(api_key, date_last_update, series_dict, key):
     print '\nThree progress bars, one for each frequency.'
     for f in series_dict:
         for a in tqdm(series_dict[f]):
-            #if f != 'A' : continue
+            #if f != 'M' : continue
 
             # list of series_ids
             ids = series_dict[f][a]
@@ -171,6 +171,12 @@ def update_series(api_key, date_last_update, series_dict, key):
                       "out": "json"}#,
                       #"start": date_last_update_iso}
             r = requests.post(url_sid, params, stream=True)
+            
+            # indicies
+            if f == 'A':
+                ed, sd = 6, 7
+            else:
+                ed, sd = 8, 9
             
             # save to file
             filename = "data/" + f + a + '.json'
@@ -191,14 +197,16 @@ def update_series(api_key, date_last_update, series_dict, key):
                     
                     # data order == series order (WOW USEFUL)
                     name = "{" + key[0] + ":\"" + ids[index] + "\"," + \
-                           key[2] + ":"
-
+                           key[1] + ":"
+                    
                     # search stream for data and recast
                     # it's not pretty
                     chunk = stream.match(chunk).groups()[0]
                     chunk = [":".join(c.split(",")) for c in chunk.split("],[")]
-                    chunk = [c[:1] + "_" + c[1:] for c in chunk]
-                    chunk = "{" + ",".join(chunk) + "}"
+                    #chunk = [c[:1] + "_" + c[1:] for c in chunk]
+                    chunk = ["{" + key[0] + ":" + c[:ed] + ","  + key[2] + ":" + 
+                             c[sd:] + "}" for c in chunk if valid(c[sd:])]
+                    chunk = "[" + ",".join(chunk) + "]"
                     
                     # write
                     fn.write(name + chunk + "}")
@@ -210,7 +218,15 @@ def update_series(api_key, date_last_update, series_dict, key):
 
     return update_date
 
-def update_data(api_key, date_last_update, cid=0, key = ("\"p\"", "\"c\"", "\"v\"")):
+def valid(s):
+    try:
+        i = float(s)
+        if i <= 0: return False
+        return True
+    except ValueError:
+        return False
+
+def update_data(api_key, date_last_update, cid=0, key = ("\"name\"", "\"children\"", "\"size\"")):
     """
     
     Runs the show.

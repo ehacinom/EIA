@@ -39,8 +39,8 @@ def list_files(filename="./data/datafiles.json", directory="data"):
 
 def aggregate(filename = "./data/datafiles.json", 
               directory = "data",
-              out = "./data/data.json",
-              key = ("p", "c")):
+              out = "./data/datab.json",
+              key = ("name", "children")):
     """
     
     Aggregate all the files in one file.
