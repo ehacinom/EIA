@@ -88,6 +88,7 @@ def search_categories(api_key, date_last_update, cid=0):
     # init search
     series_updated, series_total = 0, 0
     series_dict = defaultdict(lambda: defaultdict(list))
+    tag = defaultdict(lambda: defaultdict(list))
 
     for cid in category_id:
         # retrieve list of series_id
@@ -111,6 +112,7 @@ def search_categories(api_key, date_last_update, cid=0):
             # sort by area/frequency, all categories
             (c, a, f) = caf.match(series_id).groups()
             series_dict[f][a].append(series_id)
+            tag[f][a].append(f+c+a)
             
             series_updated += 1
             series_total += 1
@@ -119,9 +121,9 @@ def search_categories(api_key, date_last_update, cid=0):
         print "Updated {}/{} series.".format(series_updated, series_total)
         print "Newest category: {}: {}".format(cid, category_id[cid])
 
-    return series_dict
+    return series_dict, tag
 
-def update_series(api_key, date_last_update, series_dict, key):
+def update_series(api_key, date_last_update, key, cid):
     """
     INPUT
     str api_key
@@ -154,6 +156,9 @@ def update_series(api_key, date_last_update, series_dict, key):
     # search stream for data
     stream = re.compile(r"(.+)]].+")
 
+    # series_ids
+    series_dict, tag = search_categories(api_key, date_last_update, cid)
+
     # update series
     print '\nThree progress bars, one for each frequency.'
     for f in series_dict:
@@ -162,6 +167,10 @@ def update_series(api_key, date_last_update, series_dict, key):
 
             # list of series_ids
             ids = series_dict[f][a]
+            
+            # list of series_ids tags
+            idt = tag[f][a]
+            
             length = len(ids)
 
             # POST
@@ -196,7 +205,7 @@ def update_series(api_key, date_last_update, series_dict, key):
                         continue
                     
                     # data order == series order (WOW USEFUL)
-                    name = "{" + key[0] + ":\"" + ids[index] + "\"," + \
+                    name = "{" + key[0] + ":\"" + idt[index] + "\"," + \
                            key[1] + ":"
                     
                     # search stream for data and recast
@@ -226,7 +235,7 @@ def valid(s):
     except ValueError:
         return False
 
-def update_data(api_key, date_last_update, cid=0, key = ("\"name\"", "\"children\"", "\"size\"")):
+def update_data(api_key, date_last_update, key, cid=0):
     """
     
     Runs the show.
@@ -259,7 +268,5 @@ def update_data(api_key, date_last_update, cid=0, key = ("\"name\"", "\"children
     
     """
     
-    series_dict = search_categories(api_key, date_last_update, cid)
-    update_date = update_series(api_key, date_last_update, series_dict, key)
-    
+    update_date = update_series(api_key, date_last_update, key, cid)
     return update_date

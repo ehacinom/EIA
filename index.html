@@ -18,16 +18,15 @@
     // settings
     var freq = "A",                // ("A", "Q", "M"), default is Annual
         color = d3.scale.category20c(),
-        format = d3.format(",d");
+        format = d3.format(",g");    
 
     /* SVG CANVAS */
     // http://bl.ocks.org/mbostock/3019563
-    var margin = {top: 20, right: 10, bottom: 20, left: 10};
-    var width = 960*1.5 - margin.left - margin.right, 
-        height = 500*1.5 - margin.top - margin.bottom;
+    var margin = {top: 10, right: 10, bottom: 10, left: 10},
+        diameter = 5000 - margin.left - margin.right;
     var svg = d3.select("body").append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
+        .attr("width", diameter + margin.left + margin.right)
+        .attr("height", diameter + margin.top + margin.bottom)
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -37,7 +36,7 @@
 
     var bubble = d3.layout.pack()
         .sort(null)
-        .size([height, height])
+        .size([diameter, diameter])
         .padding(1.5);
 
     /* HOPEFULLY DOING SHIT */
@@ -54,36 +53,54 @@
         // generate visualizations
         var node = svg.selectAll(".node")
             .data(bubble.nodes(classes(data))
-                .filter(function(d) { return !d.c }))
+                .filter(function(d) { return !d.children }))
+                //.filter(function(d) { return d.time == freq; }))
             .enter().append("g")
             .attr("transform", function(d) { 
                 return "translate(" + d.x + "," + d.y + ")"; });
         
         node.append("title")
-            .text(function(d) { return d.className + ": " + format(d.value); });
+            .text(function(d) { return d.f1c3a + ": " + format(d.value) + " GWh"; });
 
         node.append("circle")
             .attr("r", function(d) { return d.r; })
-            //.style("fill", function(d) { return color(d.packageName); });
+            //.style("fill", function(d) { return color(d.f1c3a); });
             .style("fill", "blue");
 
-        // node.append("text")
-        //     .attr("dy", ".3em")
-        //     .style("text-anchor", "middle")
-        //     .text(function(d) { return d.className.substring(0, d.r / 3); });
+        node.append("text")
+            .attr("dy", ".3em")
+            .style("text-anchor", "middle")
+            .text(function(d) { 
+                if (d.r / 3 > 1)
+                    return d.f1c3a.substring(4, 4 + (d.r / 3)); 
+                }
+                return d.f1c3a.substring(0, d.r / 3)
+            );
         
     });
     
     // Returns a flattened hierarchy containing all leaf nodes under the root.
     function classes(root) {
       var classes = [];
+      var states = [];
+      total = 0;
 
       function recurse(name, node) {
         if (node.children) node.children.forEach(function(child) { recurse(node.name, child); });
-        else classes.push({packageName: name, className: node.name, value: node.size});
+        // else we must deal with the actual data
+        // filter out everything not of right date range
+        // list pairs of source: size
+        // sum up sources to get state: sum of size and store in node.size
+        else {
+            // data for the chords
+            // f1c3a: frequency (1), category (3), area (2-3)
+            classes.push({f1c3a: name, time: node.name, value: node.size});
+        }
       }
 
       recurse(null, root);
+      console.log(classes);
+      console.log(states);
       return {children: classes};
     }
 
