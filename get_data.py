@@ -39,7 +39,7 @@ def default_cid():
 
     return category_id
 
-def load_json(url):
+def load_json_url(url):
     """
     INPUT
     str url
@@ -54,7 +54,7 @@ def load_json(url):
     url = urllib.urlopen(url)
     return json.load(url)
 
-def search_categories(api_key, date_last_update, cid=0):
+def search_default_cid_for_categories(api_key, date_last_update, cid=0):
     """
     INPUT
     str api_key
@@ -92,7 +92,7 @@ def search_categories(api_key, date_last_update, cid=0):
 
     for cid in category_id:
         # retrieve list of series_id
-        for cat in load_json(url_cid + cid)["category"]["childseries"]:
+        for cat in load_json_url(url_cid + cid)["category"]["childseries"]:
 
             # check last update of these series
             last = datetime.strptime(cat["updated"], "%d-%b-%y %I.%M.%S %p")
@@ -128,7 +128,7 @@ def update_series(api_key, date_last_update, key, cid):
     INPUT
     str api_key
     datetime date_last_update
-    dict series_dict, from search_categories()
+    dict series_dict, from search_default_cid_for_categories()
     key: 3-tuple of string parent/child/value identifiers
     
     OUTPUT
@@ -157,7 +157,7 @@ def update_series(api_key, date_last_update, key, cid):
     stream = re.compile(r"(.+)]].+")
 
     # series_ids
-    series_dict, tag = search_categories(api_key, date_last_update, cid)
+    series_dict, tag = search_default_cid_for_categories(api_key, date_last_update, cid)
 
     # update series
     print '\nThree progress bars, one for each frequency.'

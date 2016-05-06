@@ -13,17 +13,18 @@
     /* GLOBAL VARIABLES */
     // loading data in
     var dataset;
-    var source = "data/datab.json";
+    var source = "data/QCA.json";
 
     // settings
     var freq = "A",                // ("A", "Q", "M"), default is Annual
         color = d3.scale.category20c(),
-        format = d3.format(",g");    
+        format = d3.format(",g"),
+        pack_sort_threshhold = 1000;    
 
     /* SVG CANVAS */
     // http://bl.ocks.org/mbostock/3019563
-    var margin = {top: 10, right: 10, bottom: 10, left: 10},
-        diameter = 5000 - margin.left - margin.right;
+    var margin = {top: 40, right: 40, bottom: 40, left: 40},
+        diameter = 960 - margin.left - margin.right;
     var svg = d3.select("body").append("svg")
         .attr("width", diameter + margin.left + margin.right)
         .attr("height", diameter + margin.top + margin.bottom)
@@ -43,10 +44,27 @@
     // chords
     // https://github.com/mbostock/d3/wiki/Chord-Layout
     // http://bl.ocks.org/mbostock/4062006
+    
+    // update and rebind data to bubbles
+    // http://stackoverflow.com/questions/14794133/
+    
+    // radial gradient in bubbles
+    // http://stackoverflow.com/questions/20837147
+
+    // radial gradient arcs
+    // http://stackoverflow.com/questions/21663246/
+    // http://stackoverflow.com/questions/21828315
 
     var bubble = d3.layout.pack()
-        .sort(null)
-        .size([diameter, diameter])
+        // http://stackoverflow.com/questions/24336898/
+        //.sort(null)
+        .sort(function(a, b) {
+            var th = pack_sort_threshhold;
+            if ((a.value > th) && (b.value > th)) 
+                return -(a.value - b.value);
+            else return -1;
+        })
+        .size([diameter/2, diameter/2])
         .padding(1.5);
 
     /* HOPEFULLY DOING SHIT */
@@ -81,12 +99,10 @@
             .attr("dy", ".3em")
             .style("text-anchor", "middle")
             .text(function(d) { 
-                if (d.r / 3 > 1)
-                    return d.f1c3a.substring(4, 4 + (d.r / 3)); 
-                }
-                return d.f1c3a.substring(0, d.r / 3)
-            );
-        
+                if (d.r / 3 > 1) return d.f1c3a.substring(4, 4 + (d.r / 3)); 
+                else return;
+            });
+
     });
     
     // Returns a flattened hierarchy containing all leaf nodes under the root.
