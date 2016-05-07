@@ -13,7 +13,7 @@
     /* GLOBAL VARIABLES */
     // loading data in
     var dataset;
-    var source = "data/QCA.json";
+    var source = "data/test.json";
 
     // settings
     var freq = "A",                // ("A", "Q", "M"), default is Annual
@@ -45,8 +45,16 @@
     // https://github.com/mbostock/d3/wiki/Chord-Layout
     // http://bl.ocks.org/mbostock/4062006
     
+    // changing chord layout
+    // http://www.visualcinnamon.com/2015/08/stretched-chord.html
+    
+    // voronoi http://www.visualcinnamon.com/2015/07/voronoi.html
+    
     // update and rebind data to bubbles
     // http://stackoverflow.com/questions/14794133/
+    
+    // update and transition in chord layout
+    // http://stackoverflow.com/questions/21813723/
     
     // radial gradient in bubbles
     // http://stackoverflow.com/questions/20837147
@@ -56,6 +64,7 @@
     // http://stackoverflow.com/questions/21828315
 
     var bubble = d3.layout.pack()
+        // mixed-size bubble sorting
         // http://stackoverflow.com/questions/24336898/
         //.sort(null)
         .sort(function(a, b) {
@@ -78,17 +87,16 @@
         // put in console for inspection?
         console.log(data);
         
-        // generate visualizations
+        // bubbles
         var node = svg.selectAll(".node")
             .data(bubble.nodes(classes(data))
                 .filter(function(d) { return !d.children }))
-                //.filter(function(d) { return d.time == freq; }))
             .enter().append("g")
             .attr("transform", function(d) { 
                 return "translate(" + d.x + "," + d.y + ")"; });
         
         node.append("title")
-            .text(function(d) { return d.f1c3a + ": " + format(d.value) + " GWh"; });
+            .text(function(d) { return d.state + ": " + format(d.value) + " GWh"; });
 
         node.append("circle")
             .attr("r", function(d) { return d.r; })
@@ -98,10 +106,7 @@
         node.append("text")
             .attr("dy", ".3em")
             .style("text-anchor", "middle")
-            .text(function(d) { 
-                if (d.r / 3 > 1) return d.f1c3a.substring(4, 4 + (d.r / 3)); 
-                else return;
-            });
+            .text(function(d) { return d.state.substring(0, d.r / 3); });
 
     });
     
@@ -120,7 +125,7 @@
         else {
             // data for the chords
             // f1c3a: frequency (1), category (3), area (2-3)
-            classes.push({f1c3a: name, time: node.name, value: node.size});
+            classes.push({state: name, key: node.name, value: node.size});
         }
       }
 
