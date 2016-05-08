@@ -4,13 +4,15 @@ var dataset,
     source = "data/test.json";
 
 // derived data
-var total_energy;
+var total_energy,
+    matrix = [];
 
 // settings
-var margin = {top: 40, right: 40, bottom: 40, left: 40},
+var margin = {top: 0, right: 0, bottom: 0, left: 0},
     width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom,
-    bubbles_diameter = height / 2,
+    height = 500 - margin.top - margin.bottom;
+
+var bubbles_diameter = height / 2,
     xshift = width / 2 - bubbles_diameter / 2,
     yshift = height / 2 - bubbles_diameter / 2,
     color = d3.scale.category10(), // associated with geographic division
@@ -18,16 +20,32 @@ var margin = {top: 40, right: 40, bottom: 40, left: 40},
     format = d3.format(",g"), // text numbers format
     pack_sort_threshhold = 100000000; // sorting bubbles by mixed sizes
 
+var innerRad = bubbles_diameter * 1.3 / 2,
+    outerRad = innerRad * 1.1,
+    arc_padding = .05, // radians
+    fill = d3.scale.ordinal()
+        .domain(d3.range(3))
+        .range(["#F26223", "#FFDD89", "#957244"])
+    arc_title_text = ["gas", "renewable", "petroleum"],
+    arc_opacity = 0.74,
+    chord_opacity = 0.54;
+
 // button slicing
 var slice = 2012;
 
-// svg canvass
+// recenter
+var recenter = function() { return "translate(" + width/2 + "," + height/2 + ")"; }
+
+// svg canvas
 // http://bl.ocks.org/mbostock/3019563
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// tests
+//svg.append("circle").attr({"cx": width/2, "cy": height/2, "r": 10});
 
 // pack layout
 var bubble = d3.layout.pack()
@@ -45,7 +63,9 @@ var bubble = d3.layout.pack()
     .padding(bubble_padding);
 
 // chord layout
-
+var chord = d3.layout.chord()
+    .padding(arc_padding) // radian arc padding
+    ;//.sortSubgroups(d3.descending);
 
 // load data
 d3.json(source, function (err, data) {
@@ -75,25 +95,59 @@ d3.json(source, function (err, data) {
         .attr("dy", ".3em")
         .style("text-anchor", "middle")
         .text(function(d) { return d.state.substring(0, d.r / 3); });
+
+    // chord/arc layout
+    chord.matrix(matrix);
+    // arcs
+    // data
+    var arcs = svg.append("g").selectAll("path")
+        .data(chord.groups)
+        .enter().append("path")
+        .style("fill", function(d) { return fill(d.index); })
+        .style("stroke", function(d) { return fill(d.index); })
+        .style("opacity", arc_opacity)
+        .attr("transform", recenter())
+        .attr("d", d3.svg.arc().innerRadius(innerRad).outerRadius(outerRad));
+    // title text
+    arcs.append("title")
+        .text(function(d) {return arc_title_text[d.index];});
+    // chords
+    var chords = svg.append("g").selectAll("path")
+        .data(chord.chords)
+        .enter().append("path")
+        .attr("transform", recenter())
+        .attr("d", d3.svg.chord().radius(innerRad))
+        .style("fill", function(d) { return fill(d.target.index); }) // target determines color
+        .style("opacity", chord_opacity);
     
-    // 
+    
 });
 
 // Flattens hierarchy
 function states(root) {
-  var states = [];
-  total = 0;
-  function recurse(name, node) {
-    if (node.states) node.states.forEach(function(obj) { recurse(node.state, obj); });
-    else {
-        // data for the chords
-        total += node.total;
-        states.push({state: node.state, value: node.total, area: node.area, 
-            gas: node.gas, renewable: node.renewable, petroleum: node.petroleum});
+    var states = [],
+        total = 0,
+        gas = [],
+        renewable = [],
+        petroleum = [],
+        sources = [];
+    function recurse(name, node) {
+        if (node.states) node.states.forEach(function(obj) { recurse(node.state, obj); });
+        else {
+            // data for the chords
+            total += node.total;
+            gas.push(node.gas);
+            renewable.push(node.renewable);
+            petroleum.push(node.petroleum);
+
+            // data for the bubbles
+            states.push({state: node.state, value: node.total, area: node.area});
+        }
     }
-  }
-  recurse(null, root);
-  console.log(states);
-  total_energy = total;  // handoff to global variable
-  return {children: states};
+    // handoff to global variable
+    total_energy = total;
+    matrix.push(gas, renewable, petroleum);
+    
+    recurse(null, root);
+    return {children: states};
 }

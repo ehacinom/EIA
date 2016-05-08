@@ -11,9 +11,6 @@ var chord = d3.layout.chord()
     .sortSubgroups(d3.descending)
     .matrix(matrix);
 
-    console.log(chord);
-    console.log(chord.groups);
-
 var width = 960,
     height = 500,
     innerRadius = Math.min(width, height) * .41,
