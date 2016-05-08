@@ -1,25 +1,3 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
-<style>
-
-body {
-  font: 10px sans-serif;
-}
-
-.chord path {
-  fill-opacity: .67;
-  stroke: #000;
-  stroke-width: .5px;
-}
-
-</style>
-
-<title>Electricity in America</title>
-
-<body>
-<script src="//d3js.org/d3.v3.min.js"></script>
-<script>
-
 // From http://mkweb.bcgsc.ca/circos/guide/tables/
 var matrix = [
   [ 0,  0, 0, 0],
@@ -113,5 +91,3 @@ function fade(opacity) {
         .style("opacity", opacity);
   };
 }
-
-</script>
