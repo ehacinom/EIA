@@ -6,7 +6,7 @@ var matrix = [
   [ 1013,   990,  0, 0]
 ];
 
-var chord = d3.layout.chord()
+var chord2 = d3.layout.chord2()
     .padding(.05)
     .sortSubgroups(d3.descending)
     .matrix(matrix);
@@ -27,7 +27,7 @@ var svg = d3.select("body").append("svg")
     .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
 svg.append("g").selectAll("path")
-    .data(chord.groups)
+    .data(chord2.groups)
   .enter().append("path")
     .style("fill", function(d) { return fill(d.index); })
     .style("stroke", function(d) { return fill(d.index); })
@@ -36,7 +36,7 @@ svg.append("g").selectAll("path")
     .on("mouseout", fade(1));
 
 var ticks = svg.append("g").selectAll("g")
-    .data(chord.groups)
+    .data(chord2.groups)
   .enter().append("g").selectAll("g")
     .data(groupTicks)
   .enter().append("g")
@@ -60,11 +60,11 @@ ticks.append("text")
     .text(function(d) { return d.label; });
 
 svg.append("g")
-    .attr("class", "chord")
+    .attr("class", "chord2")
   .selectAll("path")
-    .data(chord.chords)
+    .data(chord2.chord2s)
   .enter().append("path")
-    .attr("d", d3.svg.chord().radius(innerRadius))
+    .attr("d", d3.svg.chord2().radius(innerRadius))
     .style("fill", function(d) { return fill(d.target.index); })
     .style("opacity", 1);
 
@@ -79,10 +79,10 @@ function groupTicks(d) {
   });
 }
 
-// Returns an event handler for fading a given chord group.
+// Returns an event handler for fading a given chord2 group.
 function fade(opacity) {
   return function(g, i) {
-    svg.selectAll(".chord path")
+    svg.selectAll(".chord2 path")
         .filter(function(d) { return d.source.index != i && d.target.index != i; })
       .transition()
         .style("opacity", opacity);

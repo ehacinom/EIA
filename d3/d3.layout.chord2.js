@@ -1,6 +1,20 @@
-d3.layout.chord = function() {
-    var chord = {},
-        chords, groups, matrix, n, padding = 0,
+// var ε = 1e-6,
+//     ε2 = ε * ε,
+//     π = Math.PI,
+//     τ = 2 * π,
+//     τε = τ - ε,
+//     halfπ = π / 2,
+//     d3_radians = π / 180,
+//     d3_degrees = 180 / π;
+
+// global variables defined elsewhere in d3.js
+var π = Math.PI,
+    τ = 2 * π;
+
+
+d3.layout.chord2 = function() {
+    var chord2 = {},
+        chord2s, groups, matrix, n, padding = 0,
         sortGroups, sortSubgroups, sortChords;
 
     function relayout() {
@@ -9,7 +23,7 @@ d3.layout.chord = function() {
             groupIndex = d3.range(n),
             subgroupIndex = [],
             k, x, x0, i, j;
-        chords = [];
+        chord2s = [];
         groups = [];
         k = 0, i = -1;
         while (++i < n) {
@@ -66,7 +80,7 @@ d3.layout.chord = function() {
                 var source = subgroups[i + "-" + j],
                     target = subgroups[j + "-" + i];
                 if (source.value || target.value) {
-                    chords.push(source.value < target.value ? {
+                    chord2s.push(source.value < target.value ? {
                         source: target,
                         target: source
                     } : {
@@ -80,47 +94,47 @@ d3.layout.chord = function() {
     }
 
     function resort() {
-        chords.sort(function(a, b) {
+        chord2s.sort(function(a, b) {
             return sortChords((a.source.value + a.target.value) / 2, (b.source.value + b.target.value) / 2);
         });
     }
-    chord.matrix = function(x) {
+    chord2.matrix = function(x) {
         if (!arguments.length) return matrix;
         n = (matrix = x) && matrix.length;
-        chords = groups = null;
-        return chord;
+        chord2s = groups = null;
+        return chord2;
     };
-    chord.padding = function(x) {
+    chord2.padding = function(x) {
         if (!arguments.length) return padding;
         padding = x;
-        chords = groups = null;
-        return chord;
+        chord2s = groups = null;
+        return chord2;
     };
-    chord.sortGroups = function(x) {
+    chord2.sortGroups = function(x) {
         if (!arguments.length) return sortGroups;
         sortGroups = x;
-        chords = groups = null;
-        return chord;
+        chord2s = groups = null;
+        return chord2;
     };
-    chord.sortSubgroups = function(x) {
+    chord2.sortSubgroups = function(x) {
         if (!arguments.length) return sortSubgroups;
         sortSubgroups = x;
-        chords = null;
-        return chord;
+        chord2s = null;
+        return chord2;
     };
-    chord.sortChords = function(x) {
+    chord2.sortChords = function(x) {
         if (!arguments.length) return sortChords;
         sortChords = x;
-        if (chords) resort();
-        return chord;
+        if (chord2s) resort();
+        return chord2;
     };
-    chord.chords = function() {
-        if (!chords) relayout();
-        return chords;
+    chord2.chord2s = function() {
+        if (!chord2s) relayout();
+        return chord2s;
     };
-    chord.groups = function() {
+    chord2.groups = function() {
         if (!groups) relayout();
         return groups;
     };
-    return chord;
+    return chord2;
 };

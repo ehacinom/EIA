@@ -1,18 +1,18 @@
 /* GLOBAL VARIABLES */
 // loading data in
 var dataset,
-    source = "data/test.json";
+    fp = "data/test.json";
 
 // derived data
 var total_energy,
     matrix = [];
 
 // settings
-var margin = {top: 0, right: 0, bottom: 0, left: 0},
+var margin = {top: 40, right: 50, bottom: 40, left: 50},
     width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+    height = 700 - margin.top - margin.bottom;
 
-var bubbles_diameter = height / 2,
+var bubbles_diameter = height * 3 / 4,
     xshift = width / 2 - bubbles_diameter / 2,
     yshift = height / 2 - bubbles_diameter / 2,
     color = d3.scale.category10(), // associated with geographic division
@@ -20,9 +20,9 @@ var bubbles_diameter = height / 2,
     format = d3.format(",g"), // text numbers format
     pack_sort_threshhold = 100000000; // sorting bubbles by mixed sizes
 
-var innerRad = bubbles_diameter * 1.3 / 2,
-    outerRad = innerRad * 1.1,
-    arc_padding = .05, // radians
+var innerRad = bubbles_diameter * 1.25 / 2,
+    outerRad = innerRad * 1.05,
+    arc_padding = .04, // radians
     fill = d3.scale.ordinal()
         .domain(d3.range(3))
         .range(["#F26223", "#FFDD89", "#957244"])
@@ -68,7 +68,7 @@ var chord = d3.layout.chord()
     ;//.sortSubgroups(d3.descending);
 
 // load data
-d3.json(source, function (err, data) {
+d3.json(fp, function (err, data) {
     if (err) throw err;
     
     // handoff to global var
@@ -117,7 +117,7 @@ d3.json(source, function (err, data) {
         .enter().append("path")
         .attr("transform", recenter())
         .attr("d", d3.svg.chord().radius(innerRad))
-        .style("fill", function(d) { return fill(d.target.index); }) // target determines color
+        .style("fill", function(d) { return fill(d.source.index); }) // source determines color
         .style("opacity", chord_opacity);
     
     
@@ -129,8 +129,7 @@ function states(root) {
         total = 0,
         gas = [],
         renewable = [],
-        petroleum = [],
-        sources = [];
+        petroleum = [];
     function recurse(name, node) {
         if (node.states) node.states.forEach(function(obj) { recurse(node.state, obj); });
         else {
