@@ -7,8 +7,10 @@ var dataset,
 
 // derived data
 var total_energy,
-    matrix = [],
-    state_id = [];
+    matrix = [];
+
+var state_id = ["", "AL", "AK", "", "AZ", "AR", "CA", "", "CO", "CT", "DE", "DC", "FL", "GA", "", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "", "WA", "WV", "WI", "WY"];
+
 
 /* SETTINGS */
 var margin = { top: 40, right: 50, bottom: 40, left: 50 },
@@ -114,27 +116,22 @@ d3.json(elecfile, function (err, data) {
         .data(bubble.nodes(states(data))
             .filter(function(d) { return !d.children }))
     
-    // node.enter().append("g")
-    //     .attr("transform", function(d) {
-    //         return "translate(" + (d.x + xshift) + "," + (d.y + yshift) + ")"; });
-    // // title text
-    // node.append("title")
-    //     .text(function(d) { return d.state + ": " + format(d.value) + " GWh"; });
-    // // drawing bubbles
-    // node.append("circle")
-    //     .attr("r", function(d) { return d.r; })
-    //     .style("fill", function(d) { return color(d.area); });
-    // // text
-    // node.append("text")
-    //     .attr("dy", ".3em")
-    //     .style("text-anchor", "middle")
-    //     .text(function(d) { return d.state.substring(0, d.r / 3); });
+    node.enter().append("g")
+        .attr("transform", function(d) {
+            return "translate(" + (d.x + xshift) + "," + (d.y + yshift) + ")"; });
+    // title text
+    node.append("title")
+        .text(function(d) { return d.state + ": " + format(d.value) + " GWh"; });
+    // drawing bubbles
+    node.append("circle")
+        .attr("r", function(d) { return d.r; })
+        .style("fill", function(d) { return color(d.area); });
+    // text
+    node.append("text")
+        .attr("dy", ".3em")
+        .style("text-anchor", "middle")
+        .text(function(d) { return d.state.substring(0, d.r / 3); });
 
-});
-
-// id data
-d3.json(locidfile, function(err, ids) {
-    
 });
 
 // location data
@@ -171,8 +168,10 @@ d3.json(locfile, function(err, us) {
         // added data
         centroid.feature = d; // to draw the state
         centroid.id = d.id; // the id
-        centroid.state = "hi" // name of state
-        
+        centroid.state = state_id[d.id] // name of state
+        // radius!
+        centroid.r = 5 // radius!
+                
         nodes.push(centroid); // make node array of centroids
     });
 
