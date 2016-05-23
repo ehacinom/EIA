@@ -1,17 +1,4 @@
-// var ε = 1e-6,
-//     ε2 = ε * ε,
-//     π = Math.PI,
-//     τ = 2 * π,
-//     τε = τ - ε,
-//     halfπ = π / 2,
-//     d3_radians = π / 180,
-//     d3_degrees = 180 / π;
-
-// global variables defined elsewhere in d3.js
-var π = Math.PI,
-    τ = 2 * π;
-
-function layoutchord () {
+d3.layout.chord = function() {
     var chord = {},
         chords, groups, matrix, n, padding = 0,
         sortGroups, sortSubgroups, sortChords;
@@ -138,6 +125,3 @@ function layoutchord () {
     };
     return chord;
 };
-
-d3.layout.chord = layoutchord;
-//layoutchord.apply(d3)

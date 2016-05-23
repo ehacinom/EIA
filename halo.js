@@ -7,20 +7,20 @@ var dataset,
 var total_energy,
     matrix = [];
 
-// settings
+/* SETTINGS */
 var margin = {top: 40, right: 50, bottom: 40, left: 50},
     width = 960 - margin.left - margin.right,
     height = 700 - margin.top - margin.bottom;
 
-var bubbles_diameter = height * 3 / 4,
-    xshift = width / 2 - bubbles_diameter / 2,
-    yshift = height / 2 - bubbles_diameter / 2,
+var max_diameter = height * 3 / 4,
+    xshift = width / 2 - max_diameter / 2,
+    yshift = height / 2 - max_diameter / 2,
     color = d3.scale.category10(), // associated with geographic division
     bubble_padding = 5.5,
     format = d3.format(",g"), // text numbers format
     pack_sort_threshhold = 100000000; // sorting bubbles by mixed sizes
 
-var innerRad = bubbles_diameter * 1.25 / 2,
+var innerRad = max_diameter * 1.25 / 2,
     outerRad = innerRad * 1.05,
     arc_padding = .04, // radians
     fill = d3.scale.ordinal()
@@ -36,7 +36,7 @@ var slice = 2012;
 // recenter
 var recenter = function() { return "translate(" + width/2 + "," + height/2 + ")"; }
 
-// svg canvas
+/* SVG CANVAS */
 // http://bl.ocks.org/mbostock/3019563
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -59,22 +59,23 @@ var bubble = d3.layout.pack()
     //         return -(a.value - b.value);
     //     else return -1;
     // })
-    .size([bubbles_diameter, bubbles_diameter])
+    .size([max_diameter, max_diameter])
     .padding(bubble_padding);
 
 // chord layout
-var chord = d3.layout.chord2()
+var chord = layoutchord()
     .padding(arc_padding) // radian arc padding
     ;//.sortSubgroups(d3.descending);
 
 // load data
 d3.json(fp, function (err, data) {
     if (err) throw err;
+    if (data.slice != slice) throw 'Error: wrong slice.';
     
     // handoff to global var
-    dataset = data;
-    //console.log(data);
-    
+    dataset = data;//.children;
+    console.log(data);
+
     // bubbles
     // data
     var node = svg.selectAll(".node")
@@ -94,7 +95,7 @@ d3.json(fp, function (err, data) {
     node.append("text")
         .attr("dy", ".3em")
         .style("text-anchor", "middle")
-        .text(function(d) { return d.state.substring(0, d.r / 3); });
+        //.text(function(d) { return d.state.substring(0, d.r / 3); });
 
     // chord/arc layout
     chord.matrix(matrix);
@@ -112,15 +113,16 @@ d3.json(fp, function (err, data) {
     arcs.append("title")
         .text(function(d) {return arc_title_text[d.index];});
     // chords
+    console.log(matrix);
+    console.log(chord.chords);
     var chords = svg.append("g").selectAll("path")
         .data(chord.chords)
         .enter().append("path")
         .attr("transform", recenter())
-        .attr("d", d3.svg.chord2().radius(innerRad))
+        .attr("d", svgchord().radius(innerRad))
         .style("fill", function(d) { return fill(d.source.index); }) // source determines color
         .style("opacity", chord_opacity);
-    
-    
+
 });
 
 // Flattens hierarchy
@@ -131,7 +133,8 @@ function states(root) {
         renewable = [],
         petroleum = [];
     function recurse(name, node) {
-        if (node.states) node.states.forEach(function(obj) { recurse(node.state, obj); });
+        if (node.slice) node.children.forEach(function(obj) { 
+            recurse(node.state, obj); });
         else {
             // data for the chords
             total += node.total;
@@ -140,7 +143,7 @@ function states(root) {
             petroleum.push(node.petroleum);
 
             // data for the bubbles
-            states.push({state: node.state, value: node.total, area: node.area});
+            states.push({state: node.state, value: node.value, area: node.area});
         }
     }
     // handoff to global variable
