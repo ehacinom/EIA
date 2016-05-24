@@ -51,18 +51,18 @@ function states(root) {
         gas = [],
         renewable = [],
         petroleum = [];
-    function recurse(name, node) {
-        if (node.slice) node.children.forEach(function(obj) { 
-            recurse(node.state, obj); });
+    function recurse(name, pt) {
+        if (pt.slice) pt.children.forEach(function(obj) { 
+            recurse(pt.state, obj); });
         else {
             // data for the chords
-            total += node.total;
-            gas.push(node.gas);
-            renewable.push(node.renewable);
-            petroleum.push(node.petroleum);
+            total += pt.total;
+            gas.push(pt.gas);
+            renewable.push(pt.renewable);
+            petroleum.push(pt.petroleum);
 
             // data for the bubbles
-            states.push({state: node.state, value: node.value, area: node.area});
+            states.push({state: pt.state, value: pt.value, area: pt.area});
         }
     }
     // handoff to global variable
@@ -114,29 +114,30 @@ d3.json(elecfile, function (err, data) {
     nodes = bubble.nodes(states(data)).filter(function(d) { return !d.children });
     
     // console
+    console.log('\nelectricity data');
     console.log(elecdataset); // electricity data
     console.log(nodes); // without fuel types, with radius and pack-layout position
     
-    // // bubbles
-    // // data
-    // var node = svg.selectAll(".node")
-    //     .data(bubble.nodes(states(data))
-    //         .filter(function(d) { return !d.children }))
-    //     .enter().append("g")
-    //     .attr("transform", function(d) {
-    //         return "translate(" + (d.x + xshift) + "," + (d.y + yshift) + ")"; });
-    // // title text
-    // node.append("title")
-    //     .text(function(d) { return d.state + ": " + format(d.value) + " GWh"; });
-    // // drawing bubbles
-    // node.append("circle")
-    //     .attr("r", function(d) { return d.r; })
-    //     .style("fill", function(d) { return color(d.area); });
-    // // text
-    // node.append("text")
-    //     .attr("dy", ".3em")
-    //     .style("text-anchor", "middle")
-    //     .text(function(d) { return d.state.substring(0, d.r / 3); });
+    // bubbles
+    // data
+    var bub = svg.selectAll(".node")
+        .data(bubble.nodes(states(data))
+            .filter(function(d) { return !d.children }))
+        .enter().append("g")
+        .attr("transform", function(d) {
+            return "translate(" + (d.x + xshift) + "," + (d.y + yshift) + ")"; });
+    // title text
+    bub.append("title")
+        .text(function(d) { return d.state + ": " + format(d.value) + " GWh"; });
+    // drawing bubbles
+    bub.append("circle")
+        .attr("r", function(d) { return d.r; })
+        .style("fill", function(d) { return color(d.area); });
+    // text
+    bub.append("text")
+        .attr("dy", ".3em")
+        .style("text-anchor", "middle")
+        .text(function(d) { return d.state.substring(0, d.r / 3); });
 
     // chord/arc layout
     chord.matrix(matrix);
@@ -163,6 +164,7 @@ d3.json(elecfile, function (err, data) {
         .style("opacity", chord_opacity);
 
     // console 
+    console.log('\nchord data');
     console.log(matrix); // fuel types
     console.log(chord.chords); // chords ??
 
@@ -176,10 +178,11 @@ d3.json(locfile, function(err, us) {
     locdataset = us;
 
     var states = topojson.feature(us, us.objects.states),
-        nodes = [],
+        pt = [],
         links = [];
 
     // console
+    console.log('\nlocation data');
     console.log(us); // location data
     console.log(states); // drawn features
 
@@ -209,25 +212,26 @@ d3.json(locfile, function(err, us) {
         // radius!
         centroid.r = 5 // radius!
                 
-        nodes.push(centroid); // make node array of centroids
+        pt.push(centroid); // make array of centroids + data
     });
 
     // voronoi connections
-    d3.geom.voronoi().links(nodes).forEach(function(link) {
+    d3.geom.voronoi().links(pt).forEach(function(link) {
         var dx = link.source.x - link.target.x,
             dy = link.source.y - link.target.y;
-        // this determines distance between nodes!!
+        // this determines distance between points!!
         link.distance = Math.sqrt(dx * dx + dy * dy);
         links.push(link);
     });
 
-    // print nodes
-    console.log(nodes);
+    // print points
+    console.log('\ncentroids');
+    console.log(pt);
 
     // force diagram
     force
         .gravity(0)
-        .nodes(nodes) // assign array nodes here
+        .nodes(pt) // assign array nodes here
         .links(links)
         .linkDistance(function(d) {
             return d.distance; // hmm change someday?
@@ -251,9 +255,9 @@ d3.json(locfile, function(err, us) {
             return d.target.y;
         });
 
-    // nodes
-    var node = svg.selectAll("g")
-        .data(nodes)
+    // outlines ?
+    var outlines = svg.selectAll("g")
+        .data(pt)
         .enter().append("g")
         .attr("transform", function(d) {
             return "translate(" + -d.x + "," + -d.y + ")";
@@ -271,7 +275,7 @@ d3.json(locfile, function(err, us) {
     
     // test : centroid circles
     var cent = svg.selectAll("circle")
-        .data(nodes)
+        .data(pt)
         .enter().append("circle")
         .attr("cx", function(d) {return d.x;})
         .attr("cy", function(d) {return d.y;})
@@ -290,7 +294,7 @@ d3.json(locfile, function(err, us) {
     //       .attr("x2", function(d) { return d.target.x; })
     //       .attr("y2", function(d) { return d.target.y; });
     //
-    //   node.attr("transform", function(d) {
+    //   pt.attr("transform", function(d) {
     //     return "translate(" + d.x + "," + d.y + ")";
     //   });
     // });
