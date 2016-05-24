@@ -1,6 +1,8 @@
 /* GLOBAL VARIABLES */
 // loading data in
-var dataset,
+var elecdataset,
+    locdataset,
+    nodes,
     elecfile = "data/test.json",
     locfile = "data/us_states.json",
     locidfile = "data/us_states_id.json";
@@ -9,8 +11,8 @@ var dataset,
 var total_energy,
     matrix = [];
 
+// location data needs to be tagged with state names
 var state_id = ["", "AL", "AK", "", "AZ", "AR", "CA", "", "CO", "CT", "DE", "DC", "FL", "GA", "", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "", "WA", "WV", "WI", "WY"];
-
 
 /* SETTINGS */
 var margin = { top: 40, right: 50, bottom: 40, left: 50 },
@@ -39,7 +41,7 @@ var innerRad = bubbles_diameter * 1.25 / 2,
 var slice = 2012;
 
 /* FUNCTIONS */
-// recenter
+// recenter // used for arcs
 var recenter = function() { return "translate(" + width / 2 + "," + height / 2 + ")"; }
 
 // Flattens hierarchy
@@ -97,7 +99,7 @@ var bubble = d3.layout.pack()
     // })
     .size([bubbles_diameter, bubbles_diameter])
     .padding(bubble_padding);
-var chord = d3.layout.chord()
+var chord = d3.layout.chord() // layoutchord() or d3.layout.chord()
     .padding(arc_padding) // radian arc padding
     ;//.sortSubgroups(d3.descending);
 
@@ -108,29 +110,61 @@ d3.json(elecfile, function (err, data) {
     if (data.slice != slice) throw 'Error: wrong slice.';
 
     // handoff to global var
-    dataset = data;
-    console.log(dataset);
+    elecdataset = data;
+    nodes = bubble.nodes(states(data)).filter(function(d) { return !d.children });
     
-    // bubbles
-    var node = svg.selectAll(".node")
-        .data(bubble.nodes(states(data))
-            .filter(function(d) { return !d.children }))
+    // console
+    console.log(elecdataset); // electricity data
+    console.log(nodes); // without fuel types, with radius and pack-layout position
     
-    node.enter().append("g")
-        .attr("transform", function(d) {
-            return "translate(" + (d.x + xshift) + "," + (d.y + yshift) + ")"; });
+    // // bubbles
+    // // data
+    // var node = svg.selectAll(".node")
+    //     .data(bubble.nodes(states(data))
+    //         .filter(function(d) { return !d.children }))
+    //     .enter().append("g")
+    //     .attr("transform", function(d) {
+    //         return "translate(" + (d.x + xshift) + "," + (d.y + yshift) + ")"; });
+    // // title text
+    // node.append("title")
+    //     .text(function(d) { return d.state + ": " + format(d.value) + " GWh"; });
+    // // drawing bubbles
+    // node.append("circle")
+    //     .attr("r", function(d) { return d.r; })
+    //     .style("fill", function(d) { return color(d.area); });
+    // // text
+    // node.append("text")
+    //     .attr("dy", ".3em")
+    //     .style("text-anchor", "middle")
+    //     .text(function(d) { return d.state.substring(0, d.r / 3); });
+
+    // chord/arc layout
+    chord.matrix(matrix);
+    // arcs
+    // data
+    var arcs = svg.append("g").selectAll("path")
+        .data(chord.groups)
+        .enter().append("path")
+        .style("fill", function(d) { return fill(d.index); })
+        .style("stroke", function(d) { return fill(d.index); })
+        .style("opacity", arc_opacity)
+        .attr("transform", recenter())
+        .attr("d", d3.svg.arc().innerRadius(innerRad).outerRadius(outerRad));
     // title text
-    node.append("title")
-        .text(function(d) { return d.state + ": " + format(d.value) + " GWh"; });
-    // drawing bubbles
-    node.append("circle")
-        .attr("r", function(d) { return d.r; })
-        .style("fill", function(d) { return color(d.area); });
-    // text
-    node.append("text")
-        .attr("dy", ".3em")
-        .style("text-anchor", "middle")
-        .text(function(d) { return d.state.substring(0, d.r / 3); });
+    arcs.append("title")
+        .text(function(d) {return arc_title_text[d.index];});
+    // chords
+    var chords = svg.append("g").selectAll("path")
+        .data(chord.chords)
+        .enter().append("path")
+        .attr("transform", recenter())
+        .attr("d", d3.svg.chord().radius(innerRad)) // svgchord() or d3.svg.chord()
+        .style("fill", function(d) { return fill(d.source.index); }) // source determines color
+        .style("opacity", chord_opacity);
+
+    // console 
+    console.log(matrix); // fuel types
+    console.log(chord.chords); // chords ??
 
 });
 
@@ -138,13 +172,16 @@ d3.json(elecfile, function (err, data) {
 d3.json(locfile, function(err, us) {
     if (err) throw error;
 
-    console.log(us);
+    // handoff to global variables
+    locdataset = us;
 
     var states = topojson.feature(us, us.objects.states),
         nodes = [],
         links = [];
 
-    console.log(states);
+    // console
+    console.log(us); // location data
+    console.log(states); // drawn features
 
     // states
     states.features.forEach(function(d, i) {

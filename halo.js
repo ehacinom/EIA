@@ -63,7 +63,7 @@ var bubble = d3.layout.pack()
     .padding(bubble_padding);
 
 // chord layout
-var chord = layoutchord()
+var chord = layoutchord() // layoutchord() or d3.layout.chord()
     .padding(arc_padding) // radian arc padding
     ;//.sortSubgroups(d3.descending);
 
@@ -119,7 +119,7 @@ d3.json(fp, function (err, data) {
         .data(chord.chords)
         .enter().append("path")
         .attr("transform", recenter())
-        .attr("d", svgchord().radius(innerRad))
+        .attr("d", d3.svg.chord().radius(innerRad)) // svgchord() or d3.svg.chord()
         .style("fill", function(d) { return fill(d.source.index); }) // source determines color
         .style("opacity", chord_opacity);
 

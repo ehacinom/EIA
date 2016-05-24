@@ -92,250 +92,271 @@
         "renewable": 1.2,
         "petroleum": 9.0
         }, {
-        "state": "AK",
+        "state": "ID",
         "value": 7.7,
-        "area": "PCN",
+        "area": "MTN",
         "gas": 2.5,
         "renewable": 1.2,
         "petroleum": 3.0
         }, {
-        "state": "MI",
+        "state": "WI",
         "value": 10.7,
         "area": "ENC",
         "gas": 3.5,
         "renewable": 1.2,
         "petroleum": 5.0
         }, {
-        "state": "KY",
+        "state": "TN",
         "value": 8.7,
         "area": "ESC",
         "gas": 4.0,
         "renewable": 0.2,
         "petroleum": 4.5
         }, {
-        "state": "NV",
+        "state": "MT",
         "value": 9.7,
         "area": "MTN",
         "gas": 3.5,
         "renewable": 1.2,
         "petroleum": 5.0
         }, {
-        "state": "NY",
+        "state": "PA",
         "value": 40.7,
         "area": "MAT",
         "gas": 10.5,
         "renewable": 5.2,
         "petroleum": 25.0
         }, {
-        "state": "RI",
+        "state": "CT",
         "value": 3.7,
         "area": "NEW",
         "gas": 1.5,
         "renewable": 1.2,
         "petroleum": 1.0
         }, {
-        "state": "CA",
+        "state": "MN",
         "value": 70.7,
-        "area": "PCC",
+        "area": "WNC",
         "gas": 30.5,
         "renewable": 10.2,
         "petroleum": 30.0
         }, {
-        "state": "OR",
+        "state": "WA",
         "value": 18.7,
         "area": "PCC",
         "gas": 3.5,
         "renewable": 10.2,
         "petroleum": 5.0
         }, {
-        "state": "FL",
+        "state": "GA",
         "value": 40.7,
         "area": "SAT",
         "gas": 30.5,
         "renewable": 5.0,
         "petroleum": 5.2
         }, {
-        "state": "VA",
+        "state": "DE",
         "value": 15.7,
         "area": "SAT",
         "gas": 4.5,
         "renewable": 1.2,
         "petroleum": 10.0
         }, {
-        "state": "SD",
+        "state": "ND",
         "value": 3.7,
         "area": "WNC",
         "gas": 3.5,
         "renewable": 0,
         "petroleum": 0.2
         }, {
-        "state": "TX",
-        "value": 71.7,
+        "state": "OK",
+        "value": 21.7,
         "area": "WSC",
-        "gas": 30.5,
+        "gas": 10.5,
         "renewable": 1.2,
-        "petroleum": 40.0
+        "petroleum": 10.0
         }, {
-        "state": "LA",
+        "state": "AR",
         "value": 15.7,
         "area": "WSC",
         "gas": 5.5,
         "renewable": 1.2,
         "petroleum": 9.0
         }, {
-        "state": "AK",
+        "state": "DC",
         "value": 7.7,
-        "area": "PCN",
+        "area": "SAT",
         "gas": 2.5,
         "renewable": 1.2,
         "petroleum": 3.0
         }, {
-        "state": "MI",
+        "state": "IL",
         "value": 10.7,
         "area": "ENC",
         "gas": 3.5,
         "renewable": 1.2,
         "petroleum": 5.0
         }, {
-        "state": "KY",
+        "state": "SC",
         "value": 8.7,
-        "area": "ESC",
+        "area": "SAT",
         "gas": 4.0,
         "renewable": 0.2,
         "petroleum": 4.5
         }, {
-        "state": "NV",
+        "state": "CO",
         "value": 9.7,
         "area": "MTN",
         "gas": 3.5,
         "renewable": 1.2,
         "petroleum": 5.0
         }, {
-        "state": "NY",
+        "state": "UT",
         "value": 40.7,
-        "area": "MAT",
+        "area": "MTN",
         "gas": 10.5,
         "renewable": 5.2,
         "petroleum": 25.0
         }, {
-        "state": "RI",
+        "state": "VT",
         "value": 3.7,
         "area": "NEW",
         "gas": 1.5,
         "renewable": 1.2,
         "petroleum": 1.0
         }, {
-        "state": "CA",
+        "state": "WY",
         "value": 70.7,
-        "area": "PCC",
+        "area": "MTN",
         "gas": 30.5,
         "renewable": 10.2,
         "petroleum": 30.0
         }, {
-        "state": "OR",
+        "state": "NJ",
         "value": 18.7,
-        "area": "PCC",
+        "area": "MAT",
         "gas": 3.5,
         "renewable": 10.2,
         "petroleum": 5.0
         }, {
-        "state": "FL",
+        "state": "NE",
         "value": 40.7,
-        "area": "SAT",
+        "area": "WNC",
         "gas": 30.5,
         "renewable": 5.0,
         "petroleum": 5.2
         }, {
-        "state": "VA",
+        "state": "NC",
         "value": 15.7,
         "area": "SAT",
         "gas": 4.5,
         "renewable": 1.2,
         "petroleum": 10.0
         }, {
-        "state": "SD",
+        "state": "KS",
         "value": 3.7,
         "area": "WNC",
         "gas": 3.5,
         "renewable": 0,
         "petroleum": 0.2
         }, {
-        "state": "TX",
+        "state": "MO",
         "value": 71.7,
-        "area": "WSC",
+        "area": "WNC",
         "gas": 30.5,
         "renewable": 1.2,
         "petroleum": 40.0
         }, {
-        "state": "LA",
+        "state": "AL",
         "value": 15.7,
-        "area": "WSC",
+        "area": "ESC",
         "gas": 5.5,
         "renewable": 1.2,
         "petroleum": 9.0
         }, {
-        "state": "FL",
+        "state": "AZ",
         "value": 40.7,
-        "area": "SAT",
+        "area": "MTN",
         "gas": 30.5,
         "renewable": 5.0,
         "petroleum": 5.2
         }, {
-        "state": "VA",
+        "state": "MD",
         "value": 15.7,
         "area": "SAT",
         "gas": 4.5,
         "renewable": 1.2,
         "petroleum": 10.0
         }, {
-        "state": "SD",
+        "state": "HI",
         "value": 3.7,
-        "area": "WNC",
+        "area": "PCN",
         "gas": 3.5,
         "renewable": 0,
         "petroleum": 0.2
         }, {
-        "state": "TX",
+        "state": "IN",
         "value": 71.7,
-        "area": "WSC",
+        "area": "ENC",
         "gas": 30.5,
         "renewable": 1.2,
         "petroleum": 40.0
         }, {
-        "state": "LA",
+        "state": "ME",
         "value": 15.7,
-        "area": "WSC",
+        "area": "NEW",
         "gas": 5.5,
         "renewable": 1.2,
         "petroleum": 9.0
         }, {
-        "state": "FL",
+        "state": "MA",
         "value": 40.7,
-        "area": "SAT",
+        "area": "NEW",
         "gas": 30.5,
         "renewable": 5.0,
         "petroleum": 5.2
         }, {
-        "state": "VA",
+        "state": "MS",
         "value": 15.7,
-        "area": "SAT",
+        "area": "ESC",
         "gas": 4.5,
         "renewable": 1.2,
         "petroleum": 10.0
         }, {
-        "state": "SD",
+        "state": "NH",
         "value": 3.7,
-        "area": "WNC",
+        "area": "NEW",
         "gas": 3.5,
         "renewable": 0,
         "petroleum": 0.2
         }, {
-        "state": "TX",
-        "value": 71.7,
-        "area": "WSC",
-        "gas": 30.5,
+        "state": "NM",
+        "value": 21.7,
+        "area": "MTN",
+        "gas": 10.5,
         "renewable": 1.2,
-        "petroleum": 40.0
+        "petroleum": 10.0
+    }, {
+        "state": "OH",
+        "value": 51.7,
+        "area": "ENC",
+        "gas": 20.5,
+        "renewable": 1.2,
+        "petroleum": 30.0
+    }, {
+        "state": "WV",
+        "value": 21.7,
+        "area": "SAT",
+        "gas": 10.5,
+        "renewable": 1.2,
+        "petroleum": 10.0
+    }, {
+        "state": "IA",
+        "value": 21.7,
+        "area": "WNC",
+        "gas": 10.5,
+        "renewable": 1.2,
+        "petroleum": 10.0
     }
     ]
 }
