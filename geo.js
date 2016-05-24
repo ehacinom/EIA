@@ -8,8 +8,7 @@ var elecdataset,
     locidfile = "data/us_states_id.json";
 
 // derived data
-var total_energy,
-    matrix = [];
+var matrix = [];
 
 // location data needs to be tagged with state names
 var state_id = ["", "AL", "AK", "", "AZ", "AR", "CA", "", "CO", "CT", "DE", "DC", "FL", "GA", "", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "", "WA", "WV", "WI", "WY"];
@@ -45,31 +44,36 @@ var slice = 2012;
 var recenter = function() { return "translate(" + width / 2 + "," + height / 2 + ")"; }
 
 // Flattens hierarchy
+// Be careful not to call twice: matrix changes (doubles in elements) because matrix 
+// is a global variable
 function states(root) {
     var states = [],
-        total = 0,
         gas = [],
         renewable = [],
         petroleum = [];
+    
     function recurse(name, pt) {
         if (pt.slice) pt.children.forEach(function(obj) { 
             recurse(pt.state, obj); });
         else {
             // data for the chords
-            total += pt.total;
+            // add more data for chords when they exist
             gas.push(pt.gas);
             renewable.push(pt.renewable);
             petroleum.push(pt.petroleum);
 
             // data for the bubbles
+            // area function for the drawing of bubbles currently
+            // remove this property later
             states.push({state: pt.state, value: pt.value, area: pt.area});
         }
     }
-    // handoff to global variable
-    total_energy = total;
-    matrix.push(gas, renewable, petroleum);
     
-    recurse(null, root);
+    // careful: this is called every time states() is called
+    matrix.push(gas, renewable, petroleum); 
+    
+    // recurse
+    recurse(null, root);    
     return {children: states};
 }
 
@@ -87,7 +91,7 @@ var svg = d3.select("body").append("svg")
 /* LAYOUTS */
 var path = d3.geo.path();
 var force = d3.layout.force().size([width, height]);
-var bubble = d3.layout.pack()
+var pack = d3.layout.pack()
     .sort(null)
     // mixed-size bubble sorting
     // http://stackoverflow.com/questions/24336898/
@@ -111,7 +115,7 @@ d3.json(elecfile, function (err, data) {
 
     // handoff to global var
     elecdataset = data;
-    nodes = bubble.nodes(states(data)).filter(function(d) { return !d.children });
+    nodes = pack.nodes(states(data)).filter(function(d) { return !d.children });
     
     // console
     console.log('\nelectricity data');
@@ -121,7 +125,7 @@ d3.json(elecfile, function (err, data) {
     // bubbles
     // data
     var bub = svg.selectAll(".node")
-        .data(bubble.nodes(states(data))
+        .data(pack.nodes(states(data))
             .filter(function(d) { return !d.children }))
         .enter().append("g")
         .attr("transform", function(d) {
@@ -189,7 +193,7 @@ d3.json(locfile, function(err, us) {
     // states
     states.features.forEach(function(d, i) {
         //if (d.id === 2 || d.id === 15 || d.id === 72) return; // remove AK, HI, ?
-        var centroid = path.centroid(d);
+        var centroid = path.centroid(d); // path centroid! :D such a useful function
         if (centroid.some(isNaN)) return;
         
         // centroid data
