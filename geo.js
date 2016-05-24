@@ -236,8 +236,8 @@ d3.json(locfile, function(err, us) {
     console.log(pt);
     console.log(nodes);
 
-    // voronoi connections
-    d3.geom.voronoi().links(pt).forEach(function(link) {
+    // voronoi connections // calculating links
+    d3.geom.voronoi().links(nodes).forEach(function(link) {
         var dx = link.source.x - link.target.x,
             dy = link.source.y - link.target.y;
         // this determines distance between points!!
@@ -245,17 +245,17 @@ d3.json(locfile, function(err, us) {
         links.push(link);
     });
 
-    // force diagram
+    // force diagrams // calculating forces
     force
-        .gravity(0)
-        .nodes(pt) // assign array nodes here
+        .gravity(0) // make gravity towards center of arcs
+        .nodes(nodes) // assign array nodes here
         .links(links)
         .linkDistance(function(d) {
-            return d.distance; // hmm change someday?
+            return d.distance; // from voronoi, change someday
         })
         .start();
 
-    // links
+    // drawing links
     var link = svg.selectAll("line")
         .data(links)
         .enter().append("line")
