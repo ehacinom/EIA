@@ -1,8 +1,8 @@
 /* GLOBAL VARIABLES */
 // loading data in
-var elecdataset,
-    locdataset,
-    nodes,
+var ELECTRICITY,
+    TJSON, GJSON,
+    nodes, nodes_i = {},
     elecfile = "data/test.json",
     locfile = "data/us_states.json",
     locidfile = "data/us_states_id.json";
@@ -43,11 +43,11 @@ var slice = 2012;
 // recenter // used for arcs
 var recenter = function() { return "translate(" + width / 2 + "," + height / 2 + ")"; }
 
-// Flattens hierarchy
+// flattens hierarchy and make arc's matrix // used for bubbles in pack layout
 // Be careful not to call twice: matrix changes (doubles in elements) because matrix 
 // is a global variable
-function states(root) {
-    var states = [],
+function flatten_pack_matrix_arc(root) {
+    var flat = [],
         gas = [],
         renewable = [],
         petroleum = [];
@@ -65,16 +65,30 @@ function states(root) {
             // data for the bubbles
             // area function for the drawing of bubbles currently
             // remove this property later
-            states.push({state: pt.state, value: pt.value, area: pt.area});
+            flat.push({state: pt.state, value: pt.value, area: pt.area});
         }
     }
     
-    // careful: this is called every time states() is called
+    // careful: this is called every time flatten_pack_matrix_arc() is called
     matrix.push(gas, renewable, petroleum); 
     
     // recurse
     recurse(null, root);    
-    return {children: states};
+    return {children: flat};
+}
+
+// merge pack data by index to nodes
+// merging by index
+// arrays of objects a, b of equal length
+function merge_pack_data(a, b) {
+    for (i = 0; i < a.length; i++) {
+        var bb = {"x_pack": b[i].x, "y_pack": b[i].y, "r": b[i].r};
+        Object.assign(a[i], bb); // merge bb into a[i]
+
+        // store {state: i} in global variable
+        nodes_i[a[i].state] = i;
+    }
+    return a
 }
 
 /* SVG CANVAS */
@@ -111,66 +125,66 @@ var chord = d3.layout.chord() // layoutchord() or d3.layout.chord()
 // load data
 d3.json(elecfile, function (err, data) {
     if (err) throw err;
-    if (data.slice != slice) throw 'Error: wrong slice.';
+    if (data.slice != slice) throw 'Error: wrong time slice.';
 
     // handoff to global var
-    elecdataset = data;
-    nodes = pack.nodes(states(data)).filter(function(d) { return !d.children });
-    
-    // console
-    console.log('\nelectricity data');
-    console.log(elecdataset); // electricity data
-    console.log(nodes); // without fuel types, with radius and pack-layout position
-    
-    // bubbles
-    // data
-    var bub = svg.selectAll(".node")
-        .data(pack.nodes(states(data))
-            .filter(function(d) { return !d.children }))
-        .enter().append("g")
-        .attr("transform", function(d) {
-            return "translate(" + (d.x + xshift) + "," + (d.y + yshift) + ")"; });
-    // title text
-    bub.append("title")
-        .text(function(d) { return d.state + ": " + format(d.value) + " GWh"; });
-    // drawing bubbles
-    bub.append("circle")
-        .attr("r", function(d) { return d.r; })
-        .style("fill", function(d) { return color(d.area); });
-    // text
-    bub.append("text")
-        .attr("dy", ".3em")
-        .style("text-anchor", "middle")
-        .text(function(d) { return d.state.substring(0, d.r / 3); });
+    ELECTRICITY = data;
 
-    // chord/arc layout
-    chord.matrix(matrix);
-    // arcs
-    // data
-    var arcs = svg.append("g").selectAll("path")
-        .data(chord.groups)
-        .enter().append("path")
-        .style("fill", function(d) { return fill(d.index); })
-        .style("stroke", function(d) { return fill(d.index); })
-        .style("opacity", arc_opacity)
-        .attr("transform", recenter())
-        .attr("d", d3.svg.arc().innerRadius(innerRad).outerRadius(outerRad));
-    // title text
-    arcs.append("title")
-        .text(function(d) {return arc_title_text[d.index];});
-    // chords
-    var chords = svg.append("g").selectAll("path")
-        .data(chord.chords)
-        .enter().append("path")
-        .attr("transform", recenter())
-        .attr("d", d3.svg.chord().radius(innerRad)) // svgchord() or d3.svg.chord()
-        .style("fill", function(d) { return fill(d.source.index); }) // source determines color
-        .style("opacity", chord_opacity);
+    // putting things together for nodes
+    nodes = data.children; // (area, state, value, **fuels)
+    var pack_info = pack.nodes(flatten_pack_matrix_arc(data))
+                        .filter(function(d) { return !d.children });
+    nodes = merge_pack_data(nodes, pack_info); //  (r, x_pack, y_pack)
 
-    // console 
-    console.log('\nchord data');
-    console.log(matrix); // fuel types
-    console.log(chord.chords); // chords ??
+    // // bubbles
+    // // data
+    // var bub = svg.selectAll(".node")
+    //     .data(pack.nodes(flatten_pack_matrix_arc(data))
+    //         .filter(function(d) { return !d.children }))
+    //     .enter().append("g")
+    //     .attr("transform", function(d) {
+    //         return "translate(" + (d.x + xshift) + "," + (d.y + yshift) + ")"; });
+    // // title text
+    // bub.append("title")
+    //     .text(function(d) { return d.state + ": " + format(d.value) + " GWh"; });
+    // // drawing bubbles
+    // bub.append("circle")
+    //     .attr("r", function(d) { return d.r; })
+    //     .style("fill", function(d) { return color(d.area); });
+    // // text
+    // bub.append("text")
+    //     .attr("dy", ".3em")
+    //     .style("text-anchor", "middle")
+    //     .text(function(d) { return d.state.substring(0, d.r / 3); });
+    //
+    // // chord/arc layout
+    // chord.matrix(matrix);
+    // // arcs
+    // // data
+    // var arcs = svg.append("g").selectAll("path")
+    //     .data(chord.groups)
+    //     .enter().append("path")
+    //     .style("fill", function(d) { return fill(d.index); })
+    //     .style("stroke", function(d) { return fill(d.index); })
+    //     .style("opacity", arc_opacity)
+    //     .attr("transform", recenter())
+    //     .attr("d", d3.svg.arc().innerRadius(innerRad).outerRadius(outerRad));
+    // // title text
+    // arcs.append("title")
+    //     .text(function(d) {return arc_title_text[d.index];});
+    // // chords
+    // var chords = svg.append("g").selectAll("path")
+    //     .data(chord.chords)
+    //     .enter().append("path")
+    //     .attr("transform", recenter())
+    //     .attr("d", d3.svg.chord().radius(innerRad)) // svgchord() or d3.svg.chord()
+    //     .style("fill", function(d) { return fill(d.source.index); }) // source determines color
+    //     .style("opacity", chord_opacity);
+    //
+    // // console
+    // console.log('\nchord data');
+    // console.log(matrix); // fuel types
+    // console.log(chord.chords); // chords ??
 
 });
 
@@ -179,23 +193,19 @@ d3.json(locfile, function(err, us) {
     if (err) throw error;
 
     // handoff to global variables
-    locdataset = us;
+    TJSON = us;
+    GJSON = topojson.feature(us, us.objects.states);
+    
+    // local variables
+    var pt = [],    // array of centroids and related data
+        links = []; // array of voronoi links
 
-    var states = topojson.feature(us, us.objects.states),
-        pt = [],
-        links = [];
-
-    // console
-    console.log('\nlocation data');
-    console.log(us); // location data
-    console.log(states); // drawn features
-
-    // states
-    states.features.forEach(function(d, i) {
+    // centroids and data set up
+    GJSON.features.forEach(function(d, i) {
         //if (d.id === 2 || d.id === 15 || d.id === 72) return; // remove AK, HI, ?
         var centroid = path.centroid(d); // path centroid! :D such a useful function
         if (centroid.some(isNaN)) return;
-        
+
         // centroid data
         // voronoi() likes [0], [1] indexes to hold lat/long as well
         // change alaska and hawaii
@@ -209,15 +219,22 @@ d3.json(locfile, function(err, us) {
         centroid.x = centroid[0]; // latitute
         centroid.y = centroid[1]; // longitude
         
+        // merge into nodes
+        Object.assign(nodes[nodes_i[state_id[d.id]]], centroid);
+        
         // added data
         centroid.feature = d; // to draw the state
         centroid.id = d.id; // the id
-        centroid.state = state_id[d.id] // name of state
-        // radius!
-        centroid.r = 5 // radius!
-                
-        pt.push(centroid); // make array of centroids + data
+        centroid.state = state_id[d.id] // name
+        
+        // make array of centroids // for voronoi, force, outlines, circles
+        pt.push(centroid);
     });
+
+    // print points
+    console.log('\ncentroids');
+    console.log(pt);
+    console.log(nodes);
 
     // voronoi connections
     d3.geom.voronoi().links(pt).forEach(function(link) {
@@ -227,10 +244,6 @@ d3.json(locfile, function(err, us) {
         link.distance = Math.sqrt(dx * dx + dy * dy);
         links.push(link);
     });
-
-    // print points
-    console.log('\ncentroids');
-    console.log(pt);
 
     // force diagram
     force
