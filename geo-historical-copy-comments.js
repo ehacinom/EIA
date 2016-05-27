@@ -28,7 +28,7 @@ var bubbles_diameter = height * 3 / 4,
 // really like the low 0.03 grav and 2 charge and larger 0.3 alpha
 var gravity = 0.03,         // 0.1, > 0; towards center of layout // make towards center of arcs!!!
     charge = 2,             // -30; negative repels 
-    friction = 0.9,         // 0.5, [0,1]; 1 never slows
+    friction = 0.9,         // 0.9, [0,1];
     collision_alpha = 0.25, // (0,1)
     alpha = 0.3,            // 0.1; // the longer it cools, the more uncollided it will be
     linkStrength = 0.1;    // 0.1, [0,1];
@@ -177,10 +177,57 @@ d3.json(elecfile, function (err, data) {
                         .filter(function(d) { return !d.children });
     nodes = merge_pack_data(nodes, pack_info); //  (r, x_pack, y_pack)
 
-    console.log(nodes_i);
+    // // bubbles
+    // // data
+    // var bub = svg.selectAll(".node")
+    //     .data(pack.nodes(flatten_pack_matrix_arc(data))
+    //         .filter(function(d) { return !d.children }))
+    //     .enter().append("g")
+    //     .attr("transform", function(d) {
+    //         return "translate(" + (d.x + xshift) + "," + (d.y + yshift) + ")"; });
+    // // title text
+    // bub.append("title")
+    //     .text(function(d) { return d.state + ": " + format(d.value) + " GWh"; });
+    // // drawing bubbles
+    // bub.append("circle")
+    //     .attr("r", function(d) { return d.r; })
+    //     .style("fill", function(d) { return color(d.area); });
+    // // text
+    // bub.append("text")
+    //     .attr("dy", ".3em")
+    //     .style("text-anchor", "middle")
+    //     .text(function(d) { return d.state.substring(0, d.r / 3); });
+    //
+    // // chord/arc layout
+    // chord.matrix(matrix);
+    // // arcs
+    // // data
+    // var arcs = svg.append("g").selectAll("path")
+    //     .data(chord.groups)
+    //     .enter().append("path")
+    //     .style("fill", function(d) { return fill(d.index); })
+    //     .style("stroke", function(d) { return fill(d.index); })
+    //     .style("opacity", arc_opacity)
+    //     .attr("transform", recenter())
+    //     .attr("d", d3.svg.arc().innerRadius(innerRad).outerRadius(outerRad));
+    // // title text
+    // arcs.append("title")
+    //     .text(function(d) {return arc_title_text[d.index];});
+    // // chords
+    // var chords = svg.append("g").selectAll("path")
+    //     .data(chord.chords)
+    //     .enter().append("path")
+    //     .attr("transform", recenter())
+    //     .attr("d", d3.svg.chord().radius(innerRad)) // svgchord() or d3.svg.chord()
+    //     .style("fill", function(d) { return fill(d.source.index); }) // source determines color
+    //     .style("opacity", chord_opacity);
+    //
+    // // console
+    // console.log('\nchord data');
+    // console.log(matrix); // fuel types
+    // console.log(chord.chords); // chords ??
 
 });
-
 
 // location data
 d3.json(locfile, function(err, us) {
@@ -193,9 +240,6 @@ d3.json(locfile, function(err, us) {
     // local variables
     var pt = [],    // array of centroids and related data
         links = []; // array of voronoi links
-
-        console.log(ELECTRICITY);
-
 
     // centroids and data set up
     GJSON.features.forEach(function(d, i) {
@@ -228,6 +272,11 @@ d3.json(locfile, function(err, us) {
         pt.push(centroid);
     });
 
+    // print points
+    console.log('\ncentroids');
+    console.log(pt);
+    console.log(nodes);
+
     // circles
     var circles = svg.selectAll("g") //g
         .data(nodes)
@@ -248,7 +297,7 @@ d3.json(locfile, function(err, us) {
         // .attr("cy", function(d) {return d.y;})
         .attr("r", function(d) {return d.r;})
         .attr("fill", function(d) { return color(d.area); })
-        .call(force.drag); // lets you change the position // calls tick()
+        .call(force.drag); // lets you change the orientation
 
     // title text
     circles.append("title")
@@ -278,35 +327,77 @@ d3.json(locfile, function(err, us) {
         .on("tick", tick)
         .start();
 
-    // chord/arc layout
-    chord.matrix(matrix);
-    // arcs
-    // data
-    var arcs = svg.append("g").selectAll("path")
-        .data(chord.groups)
-        .enter().append("path")
-        .style("fill", function(d) { return fill(d.index); })
-        .style("stroke", function(d) { return fill(d.index); })
-        .style("opacity", arc_opacity)
-        .attr("transform", recenter())
-        .attr("d", d3.svg.arc().innerRadius(innerRad).outerRadius(outerRad));
-    // title text
-    arcs.append("title")
-        .text(function(d) {return arc_title_text[d.index];});
-    // chords
-    var chords = svg.append("g").selectAll("path")
-        .data(chord.chords)
-        .enter().append("path")
-        .attr("transform", recenter())
-        .attr("d", d3.svg.chord().radius(innerRad)) // svgchord() or d3.svg.chord()
-        .style("fill", function(d) { return fill(d.source.index); }) // source determines color
-        .style("opacity", chord_opacity);
+    // // voronoi connections // calculating links
+    // // this determines distance between centroids
+    // d3.geom.voronoi().links(nodes).forEach(function(link) {
+    //     link.distance = link.source.r + link.target.r + bubble_padding;
+    //     links.push(link);
+    // });
+    //
+    // LINKS: not good // makes circles interact oddly
+    // // voronoi connections // calculating links
+    // // Save for useage some other time: it keeps things weird
+    // d3.geom.voronoi().links(nodes).forEach(function(link) {
+    //     var dx = link.source.x - link.target.x,
+    //         dy = link.source.y - link.target.y;
+    //     // this determines distance between points!!
+    //     link.distance = Math.sqrt(dx * dx + dy * dy);
+    //     links.push(link);
+    // });
+    
+    // // drawing links
+    // var link = svg.selectAll("line")
+    //     .data(links)
+    //     .enter().append("line")
+    //     .attr("x1", function(d) {
+    //         return d.source.x;
+    //     })
+    //     .attr("y1", function(d) {
+    //         return d.source.y;
+    //     })
+    //     .attr("x2", function(d) {
+    //         return d.target.x;
+    //     })
+    //     .attr("y2", function(d) {
+    //         return d.target.y;
+    //     });
 
-    // console
-    console.log('\nchord data');
-    console.log(matrix); // fuel types
-    console.log(chord.chords); // chords ??
+    // // outlines of states --> circles
+    // var outlines = svg.selectAll("g")
+    //     .data(nodes)
+    //     .enter().append("g")
+    //     .attr("transform", function(d) {
+    //         return "translate(" + -d.x + "," + -d.y + ")";
+    //     })
+    //     .call(force.drag) // lets you change the orientation
+    //     .append("path")
+    //     .attr("transform", function(d) {
+    //         return "translate(" + d.x + "," + d.y + ")";
+    //     })
+    //     // outlines!
+    //     // currently of states, need to be of circles
+    //     .attr("d", function(d) {
+    //         return path(d.feature);
+    //     });
 
+    // // force diagrams // calculating forces
+    // force
+    //     .nodes(nodes) // assign array nodes here
+    //     .links(links)
+    //     .linkDistance(function(d) {
+    //         return d.distance; // from voronoi, change someday
+    //     });
+
+    // // lets the states bobble under the force
+    // // needed so the force pulls things together from centroid positions
+    // force.on("tick", function(e) {
+    //   link.attr("x1", function(d) { return d.source.x; })
+    //       .attr("y1", function(d) { return d.source.y; })
+    //       .attr("x2", function(d) { return d.target.x; })
+    //       .attr("y2", function(d) { return d.target.y; });
+    //
+    //   outlines.attr("transform", function(d) {
+    //     return "translate(" + d.x + "," + d.y + ")";
+    //   });
+    // });
 });
-
-
