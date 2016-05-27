@@ -26,10 +26,12 @@ var bubbles_diameter = height * 3 / 4,
     format = d3.format(",g"), // text numbers format
     pack_sort_threshhold = 100000000; // sorting bubbles by mixed sizes
 
-var gravity = 0.02,
-    charge = 2,
-    friction = 0.8,
-    collision_alpha = 0.25; // (0,1)
+var gravity = 0.02,         // 0.1, > 0; towards center of layout // make towards center of arcs!!!
+    charge = 0,             // -30; negative repels
+    friction = 0.8,         // 0.9, [0,1];
+    collision_alpha = 0.25, // (0,1)
+    alpha = 0.3,            // 0.1; // the longer it cools, the more uncollided it will be
+    linkStrength = 0.01;    // 0.1, [0,1];
 
 var innerRad = bubbles_diameter * 1.25 / 2,
     outerRad = innerRad * 1.05,
@@ -97,7 +99,7 @@ function merge_pack_data(a, b) {
 }
 
 // Resolves collisions between d and all other circles.
-function collide(alpha) {
+function collide(aa) {
     var quadtree = d3.geom.quadtree(nodes);
     return function(d) {
         var nx1 = d.x - d.r,
@@ -112,7 +114,7 @@ function collide(alpha) {
                     l = Math.sqrt(x * x + y * y),                
                     r = d.r + quad.point.r + bubble_padding;
                 if (l < r) {
-                    l = (l - r) / l * alpha;
+                    l = (l - r) / l * aa;
                     d.x -= x *= l;
                     d.y -= y *= l;
                     quad.point.x += x;
@@ -142,7 +144,8 @@ var force = d3.layout.force()
     .gravity(gravity)
     .charge(charge)
     .friction(friction)
-    ;//.alpha(0.05);
+    .alpha(alpha)
+    .linkStrength(linkStrength);
 var pack = d3.layout.pack()
     .sort(null)
     // mixed-size bubble sorting
