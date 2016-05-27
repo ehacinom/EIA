@@ -2,7 +2,7 @@
 // loading data in
 var ELECTRICITY,
     TJSON, GJSON,
-    nodes, nodes_i = {},
+    nodes = [], nodes_i = {},
     elecfile = "data/test.json",
     locfile = "data/us_states.json",
     locidfile = "data/us_states_id.json";
@@ -15,16 +15,21 @@ var state_id = ["", "AL", "AK", "", "AZ", "AR", "CA", "", "CO", "CT", "DE", "DC"
 
 /* SETTINGS */
 var margin = { top: 40, right: 50, bottom: 40, left: 50 },
-    width = 960 - margin.left - margin.right,
+    width = 700 - margin.left - margin.right,
     height = 700 - margin.top - margin.bottom;
 
 var bubbles_diameter = height * 3 / 4,
     xshift = width / 2 - bubbles_diameter / 2,
     yshift = height / 2 - bubbles_diameter / 2,
     color = d3.scale.category10(), // associated with geographic division
-    bubble_padding = 5.5,
+    bubble_padding = 5,
     format = d3.format(",g"), // text numbers format
     pack_sort_threshhold = 100000000; // sorting bubbles by mixed sizes
+
+var gravity = 0.02,
+    charge = 2,
+    friction = 0.8,
+    collision_alpha = 0.25; // (0,1)
 
 var innerRad = bubbles_diameter * 1.25 / 2,
     outerRad = innerRad * 1.05,
@@ -91,6 +96,34 @@ function merge_pack_data(a, b) {
     return a
 }
 
+// Resolves collisions between d and all other circles.
+function collide(alpha) {
+    var quadtree = d3.geom.quadtree(nodes);
+    return function(d) {
+        var nx1 = d.x - d.r,
+            nx2 = d.x + d.r,
+            ny1 = d.y - d.r,
+            ny2 = d.y + d.r;
+
+        quadtree.visit(function(quad, x1, y1, x2, y2) {
+            if (quad.point && (quad.point !== d)) {
+                var x = d.x - quad.point.x,
+                    y = d.y - quad.point.y,
+                    l = Math.sqrt(x * x + y * y),                
+                    r = d.r + quad.point.r + bubble_padding;
+                if (l < r) {
+                    l = (l - r) / l * alpha;
+                    d.x -= x *= l;
+                    d.y -= y *= l;
+                    quad.point.x += x;
+                    quad.point.y += y;
+                }
+            }
+            return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+        });
+    };
+}
+
 /* SVG CANVAS */
 // http://bl.ocks.org/mbostock/3019563
 var svg = d3.select("body").append("svg")
@@ -104,7 +137,12 @@ var svg = d3.select("body").append("svg")
 
 /* LAYOUTS */
 var path = d3.geo.path();
-var force = d3.layout.force().size([width, height]);
+var force = d3.layout.force()
+    .size([bubbles_diameter, bubbles_diameter])
+    .gravity(gravity)
+    .charge(charge)
+    .friction(friction)
+    ;//.alpha(0.05);
 var pack = d3.layout.pack()
     .sort(null)
     // mixed-size bubble sorting
@@ -219,13 +257,13 @@ d3.json(locfile, function(err, us) {
         centroid.x = centroid[0]; // latitute
         centroid.y = centroid[1]; // longitude
         
-        // merge into nodes
-        Object.assign(nodes[nodes_i[state_id[d.id]]], centroid);
-        
         // added data
         centroid.feature = d; // to draw the state
         centroid.id = d.id; // the id
         centroid.state = state_id[d.id] // name
+        
+        // merge into nodes
+        Object.assign(nodes[nodes_i[state_id[d.id]]], centroid);
         
         // make array of centroids // for voronoi, force, outlines, circles
         pt.push(centroid);
@@ -237,81 +275,111 @@ d3.json(locfile, function(err, us) {
     console.log(nodes);
 
     // voronoi connections // calculating links
+    // this determines distance between centroids
     d3.geom.voronoi().links(nodes).forEach(function(link) {
-        var dx = link.source.x - link.target.x,
-            dy = link.source.y - link.target.y;
-        // this determines distance between points!!
-        link.distance = Math.sqrt(dx * dx + dy * dy);
+        link.distance = link.source.r + link.target.r + bubble_padding;
         links.push(link);
     });
 
-    // force diagrams // calculating forces
-    force
-        .gravity(0) // make gravity towards center of arcs
-        .nodes(nodes) // assign array nodes here
-        .links(links)
-        .linkDistance(function(d) {
-            return d.distance; // from voronoi, change someday
-        })
-        .start();
-
-    // drawing links
-    var link = svg.selectAll("line")
-        .data(links)
-        .enter().append("line")
-        .attr("x1", function(d) {
-            return d.source.x;
-        })
-        .attr("y1", function(d) {
-            return d.source.y;
-        })
-        .attr("x2", function(d) {
-            return d.target.x;
-        })
-        .attr("y2", function(d) {
-            return d.target.y;
-        });
-
-    // outlines ?
-    var outlines = svg.selectAll("g")
-        .data(pt)
+    // LINKS: not good // makes circles interact oddly
+    // // voronoi connections // calculating links
+    // // Save for useage some other time: it keeps things weird
+    // d3.geom.voronoi().links(nodes).forEach(function(link) {
+    //     var dx = link.source.x - link.target.x,
+    //         dy = link.source.y - link.target.y;
+    //     // this determines distance between points!!
+    //     link.distance = Math.sqrt(dx * dx + dy * dy);
+    //     links.push(link);
+    // });
+    //
+    // // drawing links
+    // var link = svg.selectAll("line")
+    //     .data(links)
+    //     .enter().append("line")
+    //     .attr("x1", function(d) {
+    //         return d.source.x;
+    //     })
+    //     .attr("y1", function(d) {
+    //         return d.source.y;
+    //     })
+    //     .attr("x2", function(d) {
+    //         return d.target.x;
+    //     })
+    //     .attr("y2", function(d) {
+    //         return d.target.y;
+    //     });
+    
+    // circles
+    var circles = svg.selectAll("g")
+        .data(nodes)
         .enter().append("g")
         .attr("transform", function(d) {
             return "translate(" + -d.x + "," + -d.y + ")";
         })
-        .call(force.drag) // lets you change the orientation
-        .append("path")
+        .append("circle")
         .attr("transform", function(d) {
             return "translate(" + d.x + "," + d.y + ")";
         })
-        // outlines!
-        // currently of states, need to be of circles
-        .attr("d", function(d) {
-            return path(d.feature);
-        });
-    
-    // test : centroid circles
-    var cent = svg.selectAll("circle")
-        .data(pt)
-        .enter().append("circle")
-        .attr("cx", function(d) {return d.x;})
-        .attr("cy", function(d) {return d.y;})
-        .attr("r", "5px")
-        .attr("fill", function(d) {
-            if (d.id == 2) 
-                return "red";
-            else
-                return "white";
-        });
+        // // WHY IS THIS NOT NECESSARY TO INITIALIZE POSITIONS IDK
+        // .attr("cx", function(d) {return d.x;})
+        // .attr("cy", function(d) {return d.y;})
+        .attr("r", function(d) {return d.r;})
+        .attr("fill", function(d) { return color(d.area); })
+        .call(force.drag); // lets you change the orientation
 
-    // // lets the states bobble
+    // // outlines of states --> circles
+    // var outlines = svg.selectAll("g")
+    //     .data(nodes)
+    //     .enter().append("g")
+    //     .attr("transform", function(d) {
+    //         return "translate(" + -d.x + "," + -d.y + ")";
+    //     })
+    //     .call(force.drag) // lets you change the orientation
+    //     .append("path")
+    //     .attr("transform", function(d) {
+    //         return "translate(" + d.x + "," + d.y + ")";
+    //     })
+    //     // outlines!
+    //     // currently of states, need to be of circles
+    //     .attr("d", function(d) {
+    //         return path(d.feature);
+    //     });
+
+
+    // circle tick function
+    function tick(e) {
+      circles
+          .each(collide(collision_alpha))
+          .attr("cx", function(d) { return d.x; })
+          .attr("cy", function(d) { return d.y; });
+    }
+
+
+    // on("tick") has to be placed down here, not up there
+    // because else the function runs asynchronously
+    // enters an undefined node as the function
+    // and is sad and won't run.
+    force.nodes(nodes)
+        .on("tick", tick)
+        .start();
+    
+    // // force diagrams // calculating forces
+    // force
+    //     .nodes(nodes) // assign array nodes here
+    //     .links(links)
+    //     .linkDistance(function(d) {
+    //         return d.distance; // from voronoi, change someday
+    //     });
+
+    // // lets the states bobble under the force
+    // // needed so the force pulls things together from centroid positions
     // force.on("tick", function(e) {
     //   link.attr("x1", function(d) { return d.source.x; })
     //       .attr("y1", function(d) { return d.source.y; })
     //       .attr("x2", function(d) { return d.target.x; })
     //       .attr("y2", function(d) { return d.target.y; });
     //
-    //   pt.attr("transform", function(d) {
+    //   outlines.attr("transform", function(d) {
     //     return "translate(" + d.x + "," + d.y + ")";
     //   });
     // });
