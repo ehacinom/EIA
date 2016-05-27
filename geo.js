@@ -4,8 +4,7 @@ var ELECTRICITY,
     TJSON, GJSON,
     nodes = [], nodes_i = {},
     elecfile = "data/test.json",
-    locfile = "data/us_states.json",
-    locidfile = "data/us_states_id.json";
+    locfile = "data/us_states.json";
 
 // derived data
 var matrix = [];
@@ -26,12 +25,13 @@ var bubbles_diameter = height * 3 / 4,
     format = d3.format(",g"), // text numbers format
     pack_sort_threshhold = 100000000; // sorting bubbles by mixed sizes
 
-var gravity = 0.02,         // 0.1, > 0; towards center of layout // make towards center of arcs!!!
-    charge = 0,             // -30; negative repels
-    friction = 0.8,         // 0.9, [0,1];
+// really like the low 0.03 grav and 2 charge and larger 0.3 alpha
+var gravity = 0.03,         // 0.1, > 0; towards center of layout // make towards center of arcs!!!
+    charge = 2,             // -30; negative repels 
+    friction = 0.9,         // 0.9, [0,1];
     collision_alpha = 0.25, // (0,1)
     alpha = 0.3,            // 0.1; // the longer it cools, the more uncollided it will be
-    linkStrength = 0.01;    // 0.1, [0,1];
+    linkStrength = 0.1;    // 0.1, [0,1];
 
 var innerRad = bubbles_diameter * 1.25 / 2,
     outerRad = innerRad * 1.05,
@@ -45,6 +45,42 @@ var innerRad = bubbles_diameter * 1.25 / 2,
 
 // button slicing
 var slice = 2012;
+
+/* SVG CANVAS */
+// http://bl.ocks.org/mbostock/3019563
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// tests
+//svg.append("circle").attr({"cx": width/2, "cy": height/2, "r": 10});
+
+/* LAYOUTS */
+var path = d3.geo.path();
+var force = d3.layout.force()
+    .size([bubbles_diameter, bubbles_diameter])
+    .gravity(gravity)
+    //.charge(charge)
+    //.friction(friction)
+    .alpha(alpha)
+    .linkStrength(linkStrength);
+var pack = d3.layout.pack()
+    .sort(null)
+    // mixed-size bubble sorting
+    // http://stackoverflow.com/questions/24336898/
+    // .sort(function(a, b) {
+    //     var th = pack_sort_threshhold;
+    //     if ((a.value > th) && (b.value > th))
+    //         return -(a.value - b.value);
+    //     else return -1;
+    // })
+    .size([bubbles_diameter, bubbles_diameter])
+    .padding(bubble_padding);
+var chord = d3.layout.chord() // layoutchord() or d3.layout.chord()
+    .padding(arc_padding) // radian arc padding
+    ;//.sortSubgroups(d3.descending);
 
 /* FUNCTIONS */
 // recenter // used for arcs
@@ -125,42 +161,6 @@ function collide(aa) {
         });
     };
 }
-
-/* SVG CANVAS */
-// http://bl.ocks.org/mbostock/3019563
-var svg = d3.select("body").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-// tests
-//svg.append("circle").attr({"cx": width/2, "cy": height/2, "r": 10});
-
-/* LAYOUTS */
-var path = d3.geo.path();
-var force = d3.layout.force()
-    .size([bubbles_diameter, bubbles_diameter])
-    .gravity(gravity)
-    .charge(charge)
-    .friction(friction)
-    .alpha(alpha)
-    .linkStrength(linkStrength);
-var pack = d3.layout.pack()
-    .sort(null)
-    // mixed-size bubble sorting
-    // http://stackoverflow.com/questions/24336898/
-    // .sort(function(a, b) {
-    //     var th = pack_sort_threshhold;
-    //     if ((a.value > th) && (b.value > th))
-    //         return -(a.value - b.value);
-    //     else return -1;
-    // })
-    .size([bubbles_diameter, bubbles_diameter])
-    .padding(bubble_padding);
-var chord = d3.layout.chord() // layoutchord() or d3.layout.chord()
-    .padding(arc_padding) // radian arc padding
-    ;//.sortSubgroups(d3.descending);
 
 /* DATA */
 // load data
@@ -259,15 +259,15 @@ d3.json(locfile, function(err, us) {
         } 
         centroid.x = centroid[0]; // latitute
         centroid.y = centroid[1]; // longitude
-        
+    
         // added data
         centroid.feature = d; // to draw the state
         centroid.id = d.id; // the id
         centroid.state = state_id[d.id] // name
-        
+    
         // merge into nodes
         Object.assign(nodes[nodes_i[state_id[d.id]]], centroid);
-        
+    
         // make array of centroids // for voronoi, force, outlines, circles
         pt.push(centroid);
     });
@@ -277,13 +277,63 @@ d3.json(locfile, function(err, us) {
     console.log(pt);
     console.log(nodes);
 
-    // voronoi connections // calculating links
-    // this determines distance between centroids
-    d3.geom.voronoi().links(nodes).forEach(function(link) {
-        link.distance = link.source.r + link.target.r + bubble_padding;
-        links.push(link);
-    });
+    // circles
+    var circles = svg.selectAll("g") //g
+        .data(nodes)
+        .enter()
+        .append("g")
+        .attr("transform", function(d) {
+            return "translate(" + -d.x + "," + -d.y + ")";
+        })
+        .append("circle")
+        .attr("transform", function(d) {
+            return "translate(" + d.x + "," + d.y + ")";
+        })
+        // // this is not needed to init position here
+        // // the standard init does NOT retrieve .x, .y
+        // // (because if I don't have collide calling .x .y it fails)
+        // // luckily collide() in tick() calls .x .y
+        // .attr("cx", function(d) {return d.x;})
+        // .attr("cy", function(d) {return d.y;})
+        .attr("r", function(d) {return d.r;})
+        .attr("fill", function(d) { return color(d.area); })
+        .call(force.drag); // lets you change the orientation
 
+    // title text
+    circles.append("title")
+        .text(function(d) { return d.state + ": " + format(d.value) + " GWh"; });
+
+    // // text // doesn't work :/ porque?
+    // circles.append("text")
+    //     .attr("dy", ".3em")
+    //     //.style("text-anchor", "middle")
+    //     .text(function(d) { return d.state.substring(0, d.r / 3); });
+
+    // circle tick function
+    function tick(e) {
+        circles
+            .each(collide(collision_alpha))
+            .attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+    }
+
+    // on("tick") has to be placed down here, not up there
+    // because else the function runs asynchronously
+    // enters an undefined 'node' as the function
+    // and is sad and won't run.
+    // ALSO I can't figure out how to move tick to accept 'circles'
+    // as a function argument so it's going to be a local function qq
+    force.nodes(nodes)
+        .on("tick", tick)
+        .start();
+
+    // // voronoi connections // calculating links
+    // // this determines distance between centroids
+    // d3.geom.voronoi().links(nodes).forEach(function(link) {
+    //     link.distance = link.source.r + link.target.r + bubble_padding;
+    //     links.push(link);
+    // });
+    //
     // LINKS: not good // makes circles interact oddly
     // // voronoi connections // calculating links
     // // Save for useage some other time: it keeps things weird
@@ -294,7 +344,7 @@ d3.json(locfile, function(err, us) {
     //     link.distance = Math.sqrt(dx * dx + dy * dy);
     //     links.push(link);
     // });
-    //
+    
     // // drawing links
     // var link = svg.selectAll("line")
     //     .data(links)
@@ -311,24 +361,6 @@ d3.json(locfile, function(err, us) {
     //     .attr("y2", function(d) {
     //         return d.target.y;
     //     });
-    
-    // circles
-    var circles = svg.selectAll("g")
-        .data(nodes)
-        .enter().append("g")
-        .attr("transform", function(d) {
-            return "translate(" + -d.x + "," + -d.y + ")";
-        })
-        .append("circle")
-        .attr("transform", function(d) {
-            return "translate(" + d.x + "," + d.y + ")";
-        })
-        // // WHY IS THIS NOT NECESSARY TO INITIALIZE POSITIONS IDK
-        // .attr("cx", function(d) {return d.x;})
-        // .attr("cy", function(d) {return d.y;})
-        .attr("r", function(d) {return d.r;})
-        .attr("fill", function(d) { return color(d.area); })
-        .call(force.drag); // lets you change the orientation
 
     // // outlines of states --> circles
     // var outlines = svg.selectAll("g")
@@ -348,24 +380,6 @@ d3.json(locfile, function(err, us) {
     //         return path(d.feature);
     //     });
 
-
-    // circle tick function
-    function tick(e) {
-      circles
-          .each(collide(collision_alpha))
-          .attr("cx", function(d) { return d.x; })
-          .attr("cy", function(d) { return d.y; });
-    }
-
-
-    // on("tick") has to be placed down here, not up there
-    // because else the function runs asynchronously
-    // enters an undefined node as the function
-    // and is sad and won't run.
-    force.nodes(nodes)
-        .on("tick", tick)
-        .start();
-    
     // // force diagrams // calculating forces
     // force
     //     .nodes(nodes) // assign array nodes here
