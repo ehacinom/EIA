@@ -1,15 +1,15 @@
 /* GLOBAL VARIABLES */
-// loading data in
-var ELECTRICITY,
-    TJSON, GJSON,
-    nodes = [], nodes_i = {},
-    elecfile = "data/test.json",
-    locfile = "data/us_states.json";
+var elecfile = "data/test.json"
+    locfile = "data/us_states.json",
+    locidfile = "data/us_states_id.txt";
 
 // derived data
-var matrix = [];
+var nodes = [], 
+    nodes_i = {},
+    matrix = [];
 
 // location data needs to be tagged with state names
+// can be inserted via jQuery --> is that worth it?
 var state_id = ["", "AL", "AK", "", "AZ", "AR", "CA", "", "CO", "CT", "DE", "DC", "FL", "GA", "", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "", "WA", "WV", "WI", "WY"];
 
 /* SETTINGS */
@@ -18,15 +18,18 @@ var margin = { top: 40, right: 50, bottom: 40, left: 50 },
     height = 700 - margin.top - margin.bottom;
 
 var bubbles_diameter = height * 3 / 4,
+    // x- and yshift for arcs/chords/force bubbles
     xshift = width / 2 - bubbles_diameter / 2,
     yshift = height / 2 - bubbles_diameter / 2,
     color = d3.scale.category10(), // associated with geographic division
     bubble_padding = 5,
     format = d3.format(",g"), // text numbers format
-    pack_sort_threshhold = 100000000; // sorting bubbles by mixed sizes
+    pack_sort_threshhold = 100000000, // sorting bubbles by mixed sizes
+    resize_force = 1.3; // resize bubble_diameter for force, which somehow ignores margins qq
+    // should really be a translate function
 
 // really like the low 0.03 grav and 2 charge and larger 0.3 alpha
-var gravity = 0.03,         // 0.1, > 0; towards center of layout // make towards center of arcs!!!
+var gravity = 0.035,         // 0.1, > 0; towards center of layout // make towards center of arcs!!!
     charge = 2,             // -30; negative repels 
     friction = 0.9,         // 0.5, [0,1]; 1 never slows
     collision_alpha = 0.25, // (0,1)
@@ -51,6 +54,10 @@ var slice = 2012;
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
+    // What you add here will change circles inside of it
+    .attr("stroke", "white")
+    .attr("stroke-width", "6px")
+    .attr("opacity", 1)
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -60,7 +67,7 @@ var svg = d3.select("body").append("svg")
 /* LAYOUTS */
 var path = d3.geo.path();
 var force = d3.layout.force()
-    .size([bubbles_diameter, bubbles_diameter])
+    .size([bubbles_diameter + 2 * xshift, bubbles_diameter + 2 * yshift])
     .gravity(gravity)
     //.charge(charge)
     //.friction(friction)
@@ -168,9 +175,6 @@ d3.json(elecfile, function (err, data) {
     if (err) throw err;
     if (data.slice != slice) throw 'Error: wrong time slice.';
 
-    // handoff to global var
-    ELECTRICITY = data;
-
     // putting things together for nodes
     nodes = data.children; // (area, state, value, **fuels)
     var pack_info = pack.nodes(flatten_pack_matrix_arc(data))
@@ -181,24 +185,13 @@ d3.json(elecfile, function (err, data) {
 
 });
 
-
 // location data
 d3.json(locfile, function(err, us) {
     if (err) throw error;
+    gjson = topojson.feature(us, us.objects.states); // GeoJSON
 
-    // handoff to global variables
-    TJSON = us;
-    GJSON = topojson.feature(us, us.objects.states);
-    
-    // local variables
-    var pt = [],    // array of centroids and related data
-        links = []; // array of voronoi links
-
-        console.log(ELECTRICITY);
-
-
-    // centroids and data set up
-    GJSON.features.forEach(function(d, i) {
+    // centroids
+    gjson.features.forEach(function(d, i) {
         //if (d.id === 2 || d.id === 15 || d.id === 72) return; // remove AK, HI, ?
         var centroid = path.centroid(d); // path centroid! :D such a useful function
         if (centroid.some(isNaN)) return;
@@ -221,11 +214,8 @@ d3.json(locfile, function(err, us) {
         centroid.id = d.id; // the id
         centroid.state = state_id[d.id] // name
     
-        // merge into nodes
+        // merge into global variable nodes
         Object.assign(nodes[nodes_i[state_id[d.id]]], centroid);
-    
-        // make array of centroids // for voronoi, force, outlines, circles
-        pt.push(centroid);
     });
 
     // circles
@@ -250,15 +240,11 @@ d3.json(locfile, function(err, us) {
         .attr("fill", function(d) { return color(d.area); })
         .call(force.drag); // lets you change the position // calls tick()
 
-    // title text
+    // title text // remove in favor of on("mouseover")
+    // info text shows up in side bar
+    // on click, multiple state infos show up in comparison on side bar
     circles.append("title")
         .text(function(d) { return d.state + ": " + format(d.value) + " GWh"; });
-
-    // // text // doesn't work :/ porque?
-    // circles.append("text")
-    //     .attr("dy", ".3em")
-    //     //.style("text-anchor", "middle")
-    //     .text(function(d) { return d.state.substring(0, d.r / 3); });
 
     // circle tick function
     function tick(e) {
