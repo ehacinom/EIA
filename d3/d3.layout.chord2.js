@@ -12,33 +12,47 @@ var π = Math.PI,
     τ = 2 * π;
 
 function layoutchord () {
-    var chord = {},
-        chords, groups, matrix, n, padding = 0,
-        sortGroups, sortSubgroups, sortChords;
+    var chord = {}, // each chord
+        chords,     // chords data using source/target
+        groups,     // groups/arcs
+        matrix,
+        ns, nt,     // length of matrix source/target
+        padding = 0,// why is padding 0??
+        sortGroups, sortSubgroups, sortChords; // temporarily removed all of Chord sorting
 
     function relayout() {
-        var subgroups = {},
+        var subgroups = {}, // {index, subindex, startAngle, endAngle, value, }
             groupSums = [],
-            groupIndex = d3.range(n),
-            subgroupIndex = [],
-            k, x, x0, i, j;
+            groupIndex = d3.range(ns),
+            subgroupIndex = [],   // making this into targets' looper
+            k, x, x0, i, j; 
         chords = [];
         groups = [];
+        
+        // loop over arcs, the chord sources, to sum data points
+        // k is total of data; x is total of each arc
         k = 0, i = -1;
-        while (++i < n) {
+        while (++i < ns) {
             x = 0, j = -1;
-            while (++j < n) {
+            
+            // loop over bubble data, the chord targets
+            while (++j < nt) {
                 x += matrix[i][j];
             }
-            groupSums.push(x);
-            subgroupIndex.push(d3.range(n));
+            
+            groupSums.push(x); // store sum of each group/arc, which determines size of arc
+            subgroupIndex.push(d3.range(nt)); // This changes how many targets you're looking at
             k += x;
         }
+        
+        // sort groups / arcs
         if (sortGroups) {
             groupIndex.sort(function(a, b) {
                 return sortGroups(groupSums[a], groupSums[b]);
             });
         }
+        
+        // sort subgroups / targets
         if (sortSubgroups) {
             subgroupIndex.forEach(function(d, i) {
                 d.sort(function(a, b) {
@@ -46,11 +60,22 @@ function layoutchord () {
                 });
             });
         }
-        k = (τ - padding * n) / k;
-        x = 0, i = -1;
-        while (++i < n) {
+        
+        // k is radians per total of data (in our case 1 MWhr)
+        k = (τ - padding * ns) / k; 
+        
+        ////////
+        // aggregates data
+        // defines subgroups, groups
+        
+        // loop to create arrays of data obj: subgroups, groups 
+        x = 0, i = -1; // x is how many radians we have progressed
+        while (++i < ns) {
+            
+            // loop over bubbles, the chord targets
+            // create subgroups[ns-nt] data
             x0 = x, j = -1;
-            while (++j < n) {
+            while (++j < nt) {
                 var di = groupIndex[i],
                     dj = subgroupIndex[di][j],
                     v = matrix[di][dj],
@@ -72,70 +97,90 @@ function layoutchord () {
             };
             x += padding;
         }
-        i = -1;
-        while (++i < n) {
-            j = i - 1;
-            while (++j < n) {
-                var source = subgroups[i + "-" + j],
-                    target = subgroups[j + "-" + i];
-                if (source.value || target.value) {
-                    chords.push(source.value < target.value ? {
-                        source: target,
-                        target: source
-                    } : {
-                        source: source,
-                        target: target
-                    });
-                }
-            }
-        }
-        if (sortChords) resort();
+        
+        /////////
+        // defines chords the old way, we define it in additions to above 
+        // loops over arcs/sources and some bubbles/targets
+        // i = -1;
+        // while (++i < ns) {
+        //     j = i - 1;
+        //     while (++j < nt) {
+        //         var source = subgroups[i + "-" + j],
+        //             target = subgroups[j + "-" + i];
+        //         if (source.value || target.value) {
+        //             chords.push(source.value < target.value ? {
+        //                 source: target,
+        //                 target: source
+        //             } : {
+        //                 source: source,
+        //                 target: target
+        //             });
+        //         }
+        //     }
+        // }
+        
+        // // sort chords
+        // if (sortChords) resort();
     }
 
-    function resort() {
-        chords.sort(function(a, b) {
-            return sortChords((a.source.value + a.target.value) / 2, 
-                (b.source.value + b.target.value) / 2);
-        });
-    }
+    // // sort chords at end of relayout if sortChords is a thing
+    // // sort function returns
+    // function resort() {
+    //     chords.sort(function(a, b) {
+    //         return sortChords((a.source.value + a.target.value) / 2,
+    //             (b.source.value + b.target.value) / 2);
+    //     });
+    // }
+    
+    // init data
     chord.matrix = function(x) {
         if (!arguments.length) return matrix;
-        n = (matrix = x) && matrix.length;
+        //n = (matrix = x) && matrix.length;
+        ns = (matrix = x) && matrix.length;
+        nt = matrix[0].length;
         chords = groups = null;
         return chord;
     };
+    
+    // set padding between arcs in radians
     chord.padding = function(x) {
         if (!arguments.length) return padding;
         padding = x;
         chords = groups = null;
         return chord;
     };
+    
     chord.sortGroups = function(x) {
         if (!arguments.length) return sortGroups;
         sortGroups = x;
         chords = groups = null;
         return chord;
     };
+    
     chord.sortSubgroups = function(x) {
         if (!arguments.length) return sortSubgroups;
         sortSubgroups = x;
         chords = null;
         return chord;
     };
-    chord.sortChords = function(x) {
-        if (!arguments.length) return sortChords;
-        sortChords = x;
-        if (chords) resort();
-        return chord;
-    };
+    
+    // chord.sortChords = function(x) {
+    //     if (!arguments.length) return sortChords;
+    //     sortChords = x;
+    //     if (chords) resort();
+    //     return chord;
+    // };
+    
     chord.chords = function() {
         if (!chords) relayout();
         return chords;
     };
+    
     chord.groups = function() {
         if (!groups) relayout();
         return groups;
     };
+    
     return chord;
 };
 

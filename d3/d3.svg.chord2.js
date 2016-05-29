@@ -8,11 +8,11 @@ function svgchord () {
     function chord(d, i) {
         var s = subgroup(this, source, d, i),
             t = subgroup(this, target, d, i);
-        return "M" + s.p0 + arc(s.r, s.p1, s.a1 - s.a0) + (equals(s, t) ? 
-            curve(s.r, s.p1, s.r, s.p0) : 
-            curve(s.r, s.p1, t.r, t.p0) + 
-            arc(t.r, t.p1, t.a1 - t.a0) + 
-            curve(t.r, t.p1, s.r, s.p0)) + "Z";
+        return "M" + s.p0 + arc(s.r, s.p1, s.a1 - s.a0) + 
+            (equals(s, t) ? 
+                curve(s.r, s.p1, s.r, s.p0) : 
+                curve(s.r, s.p1, t.r, t.p0) + arc(t.r, t.p1, t.a1 - t.a0) + curve(t.r, t.p1, s.r, s.p0)
+            ) + "Z";
     }
 
     function subgroup(self, f, d, i) {
@@ -34,6 +34,11 @@ function svgchord () {
     }
 
     function arc(r, p, a) {
+        // rx,ry = r --> circular arc
+        // x-axis-rotation = 0 --> no rotation
+        // large-arc-flag = +(a > π) --> ??
+        // sweep-flag = 1 --> always 
+        // p = final point!!
         return "A" + r + "," + r + " 0 " + +(a > π) + ",1 " + p;
     }
 

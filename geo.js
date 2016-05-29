@@ -13,7 +13,7 @@ var nodes = [],
 var state_id = ["", "AL", "AK", "", "AZ", "AR", "CA", "", "CO", "CT", "DE", "DC", "FL", "GA", "", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "", "WA", "WV", "WI", "WY"];
 
 /* SETTINGS */
-var margin = { top: 40, right: 50, bottom: 40, left: 50 },
+var margin = { top: 40, right: 100, bottom: 40, left: 100 },
     width = 700 - margin.left - margin.right,
     height = 700 - margin.top - margin.bottom;
 
@@ -32,7 +32,7 @@ var bubbles_diameter = height * 3 / 4,
 var gravity = 0.035,         // 0.1, > 0; towards center of layout // make towards center of arcs!!!
     charge = 2,             // -30; negative repels 
     friction = 0.9,         // 0.5, [0,1]; 1 never slows
-    collision_alpha = 0.25, // (0,1)
+    collision_alpha = 0.1, // (0,1); lower value is less jittery
     alpha = 0.3,            // 0.1; // the longer it cools, the more uncollided it will be
     linkStrength = 0.1;    // 0.1, [0,1];
 
@@ -55,9 +55,6 @@ var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     // What you add here will change circles inside of it
-    .attr("stroke", "white")
-    .attr("stroke-width", "6px")
-    .attr("opacity", 1)
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -96,6 +93,7 @@ var recenter = function() { return "translate(" + width / 2 + "," + height / 2 +
 // flattens hierarchy and make arc's matrix // used for bubbles in pack layout
 // Be careful not to call twice: matrix changes (doubles in elements) because matrix 
 // is a global variable
+// ALSO UN-HARDCODE THIS :((
 function flatten_pack_matrix_arc(root) {
     var flat = [],
         gas = [],
@@ -120,7 +118,7 @@ function flatten_pack_matrix_arc(root) {
     }
     
     // careful: this is called every time flatten_pack_matrix_arc() is called
-    matrix.push(gas, renewable, petroleum); 
+    matrix.push(gas, renewable, petroleum);
     
     // recurse
     recurse(null, root);    
@@ -157,7 +155,7 @@ function collide(aa) {
                     l = Math.sqrt(x * x + y * y),                
                     r = d.r + quad.point.r + bubble_padding;
                 if (l < r) {
-                    l = (l - r) / l * aa;
+                    l = (l - r) / l * aa; // cooling parameter
                     d.x -= x *= l;
                     d.y -= y *= l;
                     quad.point.x += x;
@@ -189,6 +187,11 @@ d3.json(elecfile, function (err, data) {
 d3.json(locfile, function(err, us) {
     if (err) throw error;
     gjson = topojson.feature(us, us.objects.states); // GeoJSON
+
+    // remap centroids to fit HERE
+    // so they go contract into center
+    // ALSO make collision_alpha, gravity, and other force parameters 
+    // dependent on height/width
 
     // centroids
     gjson.features.forEach(function(d, i) {
@@ -264,9 +267,13 @@ d3.json(locfile, function(err, us) {
         .on("tick", tick)
         .start();
 
+    console.log("matrix");
+    console.log(matrix);
+    console.log(matrix[0].length);
+    
     // chord/arc layout
     chord.matrix(matrix);
-    // arcs
+    // arcs are 'groups'
     // data
     var arcs = svg.append("g").selectAll("path")
         .data(chord.groups)
@@ -291,7 +298,8 @@ d3.json(locfile, function(err, us) {
     // console
     console.log('\nchord data');
     console.log(matrix); // fuel types
-    console.log(chord.chords); // chords ??
+    console.log(chord.chords);
+    console.log(d3.range(4));
 
 });
 
