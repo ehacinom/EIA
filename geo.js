@@ -14,8 +14,10 @@ var state_id = ["", "AL", "AK", "", "AZ", "AR", "CA", "", "CO", "CT", "DE", "DC"
 
 /* SETTINGS */
 var margin = { top: 40, right: 100, bottom: 40, left: 100 },
-    width = 700 - margin.left - margin.right,
-    height = 700 - margin.top - margin.bottom;
+    width = 1500 - margin.left - margin.right,
+    height = 700 - margin.top - margin.bottom,
+    centroid_x_recenter = 900, 
+    centroid_y_recenter = 500;
 
 var bubbles_diameter = height * 3 / 4,
     // x- and yshift for arcs/chords/force bubbles
@@ -215,6 +217,11 @@ d3.json(locfile, function(err, us) {
             centroid[0] -= width*0.2;
             centroid[1] -= height*0.25;
         } 
+        
+        // recenter
+        centroid[0] *= width / centroid_x_recenter;
+        centroid[1] *= height / centroid_y_recenter;
+        
         centroid.x = centroid[0]; // latitute
         centroid.y = centroid[1]; // longitude
     
@@ -271,7 +278,6 @@ d3.json(locfile, function(err, us) {
     // as a function argument so it's going to be a local function qq
     
     // this manually ticks the force simulation
-    // note I shouldcenter states in circle first so ticks move less
     force.nodes(nodes)
         .on("tick", tick)
         .start();
