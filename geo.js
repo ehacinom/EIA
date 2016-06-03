@@ -285,7 +285,7 @@ d3.json(locfile, function(err, us) {
     // force.stop();
 
     console.log("circles");
-    console.log(circles);
+    console.log(force.nodes());
     
     // chord/arc layout
     chord.matrix(matrix).source(matrix_sources).target(matrix_targets);

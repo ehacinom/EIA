@@ -95,11 +95,14 @@ function layoutchord () {
                 var s = subgroups[di + "-" + dj];
                 var t = {
                     state: target[dj],
-                    index: dj
+                    index: dj, 
+                    x: 0,
+                    y: 0
                 };
                 
                 // define chords the new way! in here!
-                chords.push({source: s, target: t});                
+                chords.push({source: s, target: t});
+                console.log(t);    
             }
             
             // define groups / arcs
@@ -118,9 +121,9 @@ function layoutchord () {
         console.log(target);
         console.log(subgroups);
         
-        /////////
-        // defines chords the old way, we define it in additions to above 
-        // loops over arcs/sources and some bubbles/targets
+        // ///////
+        // // defines chords the old way, we define it in additions to above
+        // // loops over arcs/sources and some bubbles/targets
         // i = -1;
         // while (++i < ns) {
         //     j = i - 1;
@@ -138,7 +141,7 @@ function layoutchord () {
         //         }
         //     }
         // }
-        
+
         // // sort chords
         // if (sortChords) resort();
     }
