@@ -35,7 +35,7 @@ var gravity = 0.035,         // 0.1, > 0; towards center of layout // make towar
     collision_alpha = 0.1, // (0,1); lower value is less jittery
     alpha = 0.3,            // 0.1; // the longer it cools, the more uncollided it will be
     linkStrength = 0.1,    // 0.1, [0,1];
-    force_ticks = 100;      // times force sim runs before displaying
+    force_ticks = 120;      // times force sim runs before displaying
 
 var innerRad = bubbles_diameter * 1.25 / 2,
     outerRad = innerRad * 1.05,
@@ -243,8 +243,8 @@ d3.json(locfile, function(err, us) {
         // // the standard init does NOT retrieve .x, .y
         // // (because if I don't have collide calling .x .y it fails)
         // // luckily collide() in tick() calls .x .y
-        .attr("cx", function(d) {return d.x;})
-        .attr("cy", function(d) {return d.y;})
+        // .attr("cx", function(d) {return d.x;})
+        // .attr("cy", function(d) {return d.y;})
         .attr("r", function(d) {return d.r;})
         .attr("fill", function(d) { return color(d.area); })
         .call(force.drag); // lets you change the position // calls tick()
@@ -270,21 +270,16 @@ d3.json(locfile, function(err, us) {
     // ALSO I can't figure out how to move tick to accept 'circles'
     // as a function argument so it's going to be a local function qq
     
-    // // this is for ticking and swiping in
-    // // note I should center states in circle first so ticks move less
-    // force.nodes(nodes)
-    //     .on("tick", tick)
-    //     .start();
-    
     // this manually ticks the force simulation
-    force.nodes(nodes).on("tick", tick);
-    force.start();
-    for (var i = 0; i < force_ticks; ++i) force.tick();
-    force.stop();
+    // note I shouldcenter states in circle first so ticks move less
+    force.nodes(nodes)
+        .on("tick", tick)
+        .start();
+    for (var i = force_ticks; i > 0; --i) force.tick();
+    // force.stop();
 
-    console.log("matrix");
-    console.log(matrix);
-    console.log(matrix[0].length);
+    console.log("circles");
+    console.log(circles);
     
     // chord/arc layout
     chord.matrix(matrix).source(matrix_sources).target(matrix_targets);

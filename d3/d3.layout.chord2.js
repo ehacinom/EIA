@@ -68,7 +68,7 @@ function layoutchord () {
         // aggregates data
         // defines subgroups, groups
         
-        // loop to create arrays of data obj: subgroups, groups 
+        // loop over arcs, to create arrays of data obj: subgroups, groups 
         x = 0, i = -1; // x is how many radians we have progressed
         while (++i < ns) {
             
@@ -81,7 +81,8 @@ function layoutchord () {
                     v = matrix[di][dj],
                     a0 = x,
                     a1 = x += v * k;
-                // define sub groups / arcs
+                
+                // define sub groups / arcs / sources
                 subgroups[di + "-" + dj] = {
                     index: di,
                     subindex: dj,
@@ -90,11 +91,17 @@ function layoutchord () {
                     value: v
                 };
                 
-                // define chords the new way! in here!
+                // define targets
                 var s = subgroups[di + "-" + dj];
-                var t = target[dj];
-                console.log(t, dj);
+                var t = {
+                    state: target[dj],
+                    index: dj
+                };
+                
+                // define chords the new way! in here!
+                chords.push({source: s, target: t});                
             }
+            
             // define groups / arcs
             groups[di] = {
                 index: di,
@@ -105,7 +112,7 @@ function layoutchord () {
             x += padding;
         }
         
-        console.log("sources and targets in chord layout");
+        console.log("matrix sources targets subgroups in chord layout");
         console.log(matrix);
         console.log(source);
         console.log(target);
