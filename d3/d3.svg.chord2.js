@@ -1,18 +1,17 @@
-function svgchord () {
-    var source = d3_source,
-        target = d3_target,
-        radius = d3_svg_chordRadius,
-        startAngle = d3_svg_arcStartAngle,
-        endAngle = d3_svg_arcEndAngle;
+function svgchord (source, target, radius, startAngle, endAngle) {
+    // var source = d3_source,
+    //     target = d3_target,
+    //     radius = d3_svg_chordRadius,
+    //     startAngle = d3_svg_arcStartAngle,
+    //     endAngle = d3_svg_arcEndAngle;
 
     function chord(d, i) {
         var s = subgroup(this, source, d, i),
             t = subgroup(this, target, d, i);
-        return "M" + s.p0 + arc(s.r, s.p1, s.a1 - s.a0) + 
-            (equals(s, t) ? 
-                curve(s.r, s.p1, s.r, s.p0) : 
-                curve(s.r, s.p1, t.r, t.p0) + arc(t.r, t.p1, t.a1 - t.a0) + curve(t.r, t.p1, s.r, s.p0)
-            ) + "Z";
+        return "M" + s.p0 + arc(s.r, s.p1, s.a1 - s.a0) 
+            + (equals(s, t) ? curve(s.r, s.p1, s.r, s.p0) : curve(s.r, s.p1, t.r, t.p0) 
+            + arc(t.r, t.p1, t.a1 - t.a0) + curve(t.r, t.p1, s.r, s.p0)) 
+            + "Z";
     }
 
     function subgroup(self, f, d, i) {
@@ -29,10 +28,12 @@ function svgchord () {
         };
     }
 
+    // function to help chord() decide which kind it is, curve(source) or curve(target)
     function equals(a, b) {
         return a.a0 == b.a0 && a.a1 == b.a1;
     }
 
+    // drawing circular arcs
     function arc(r, p, a) {
         // rx,ry = r --> circular arc
         // x-axis-rotation = 0 --> no rotation
@@ -42,9 +43,12 @@ function svgchord () {
         return "A" + r + "," + r + " 0 " + +(a > π) + ",1 " + p;
     }
 
+    // drawing bezier curves
     function curve(r0, p0, r1, p1) {
         return "Q 0,0 " + p1;
     }
+    
+    
     chord.radius = function(v) {
         if (!arguments.length) return radius;
         radius = d3_functor(v);

@@ -6,7 +6,7 @@ var elecfile = "data/test.json"
 // derived data
 var nodes = [], 
     nodes_i = {},
-    matrix = [];
+    matrix = [], matrix_targets = [], matrix_sources = [];
 
 // location data needs to be tagged with state names
 // can be inserted via jQuery --> is that worth it?
@@ -34,7 +34,8 @@ var gravity = 0.035,         // 0.1, > 0; towards center of layout // make towar
     friction = 0.9,         // 0.5, [0,1]; 1 never slows
     collision_alpha = 0.1, // (0,1); lower value is less jittery
     alpha = 0.3,            // 0.1; // the longer it cools, the more uncollided it will be
-    linkStrength = 0.1;    // 0.1, [0,1];
+    linkStrength = 0.1,    // 0.1, [0,1];
+    force_ticks = 100;      // times force sim runs before displaying
 
 var innerRad = bubbles_diameter * 1.25 / 2,
     outerRad = innerRad * 1.05,
@@ -98,7 +99,8 @@ function flatten_pack_matrix_arc(root) {
     var flat = [],
         gas = [],
         renewable = [],
-        petroleum = [];
+        petroleum = [],
+        order = [];
     
     function recurse(name, pt) {
         if (pt.slice) pt.children.forEach(function(obj) { 
@@ -109,6 +111,7 @@ function flatten_pack_matrix_arc(root) {
             gas.push(pt.gas);
             renewable.push(pt.renewable);
             petroleum.push(pt.petroleum);
+            order.push(pt.state);
 
             // data for the bubbles
             // area function for the drawing of bubbles currently
@@ -119,6 +122,8 @@ function flatten_pack_matrix_arc(root) {
     
     // careful: this is called every time flatten_pack_matrix_arc() is called
     matrix.push(gas, renewable, petroleum);
+    matrix_targets.push(order);
+    matrix_sources.push("gas", "renewable", "petroleum");
     
     // recurse
     recurse(null, root);    
@@ -179,6 +184,7 @@ d3.json(elecfile, function (err, data) {
                         .filter(function(d) { return !d.children });
     nodes = merge_pack_data(nodes, pack_info); //  (r, x_pack, y_pack)
 
+    console.log("nodes_i, indicies of nodes")
     console.log(nodes_i);
 
 });
@@ -237,8 +243,8 @@ d3.json(locfile, function(err, us) {
         // // the standard init does NOT retrieve .x, .y
         // // (because if I don't have collide calling .x .y it fails)
         // // luckily collide() in tick() calls .x .y
-        // .attr("cx", function(d) {return d.x;})
-        // .attr("cy", function(d) {return d.y;})
+        .attr("cx", function(d) {return d.x;})
+        .attr("cy", function(d) {return d.y;})
         .attr("r", function(d) {return d.r;})
         .attr("fill", function(d) { return color(d.area); })
         .call(force.drag); // lets you change the position // calls tick()
@@ -263,16 +269,25 @@ d3.json(locfile, function(err, us) {
     // and is sad and won't run.
     // ALSO I can't figure out how to move tick to accept 'circles'
     // as a function argument so it's going to be a local function qq
-    force.nodes(nodes)
-        .on("tick", tick)
-        .start();
+    
+    // // this is for ticking and swiping in
+    // // note I should center states in circle first so ticks move less
+    // force.nodes(nodes)
+    //     .on("tick", tick)
+    //     .start();
+    
+    // this manually ticks the force simulation
+    force.nodes(nodes).on("tick", tick);
+    force.start();
+    for (var i = 0; i < force_ticks; ++i) force.tick();
+    force.stop();
 
     console.log("matrix");
     console.log(matrix);
     console.log(matrix[0].length);
     
     // chord/arc layout
-    chord.matrix(matrix);
+    chord.matrix(matrix).source(matrix_sources).target(matrix_targets);
     // arcs are 'groups'
     // data
     var arcs = svg.append("g").selectAll("path")
@@ -298,8 +313,6 @@ d3.json(locfile, function(err, us) {
     // console
     console.log('\nchord data');
     console.log(matrix); // fuel types
-    console.log(chord.chords);
-    console.log(d3.range(4));
 
 });
 
