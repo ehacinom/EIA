@@ -6,7 +6,8 @@ var elecfile = "data/test.json"
 // derived data
 var nodes = [], 
     nodes_i = {},
-    matrix = [], matrix_targets = [], matrix_sources = [];
+    matrix = [], matrix_targets = [], 
+    matrix_sources = ["gas", "renewable", "petroleum"];
 
 // location data needs to be tagged with state names
 // can be inserted via jQuery --> is that worth it?
@@ -125,7 +126,6 @@ function flatten_pack_matrix_arc(root) {
     // careful: this is called every time flatten_pack_matrix_arc() is called
     matrix.push(gas, renewable, petroleum);
     matrix_targets.push(order);
-    matrix_sources.push("gas", "renewable", "petroleum");
     
     // recurse
     recurse(null, root);    
@@ -283,12 +283,9 @@ d3.json(locfile, function(err, us) {
         .start();
     for (var i = force_ticks; i > 0; --i) force.tick();
     // force.stop();
-
-    console.log("circles");
-    console.log(force.nodes());
     
     // chord/arc layout
-    chord.matrix(matrix).source(matrix_sources).target(matrix_targets);
+    chord.data(force.nodes()).source(matrix_sources);
     // arcs are 'groups'
     // data
     var arcs = svg.append("g").selectAll("path")

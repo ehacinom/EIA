@@ -15,10 +15,12 @@ function layoutchord () {
     var chord = {}, // each chord
         chords,     // chords data using source/target
         groups,     // groups/arcs
-        matrix, source, target,
+        nodes, source,
         ns, nt,     // length of matrix source/target
-        padding = 0,// why is padding 0??
+        padding = 0,
         sortGroups, sortSubgroups, sortChords; // temporarily removed all of Chord sorting
+
+    var matrix = build_matrix();
 
     function relayout() {
         var subgroups = {}, // {index, subindex, startAngle, endAngle, value, }
@@ -155,34 +157,42 @@ function layoutchord () {
     //     });
     // }
     
+    
     // init data
-    chord.matrix = function(x) {
-        if (!arguments.length) return matrix;
-        ns = (matrix = x) && matrix.length;
-        nt = matrix[0].length;
+    chord.data = function(x) {
+        if (!arguments.length) return nodes;
+        nt = (nodes = x) && nodes.length;
         chords = groups = null;
         return chord;
     };
     
+    
+    // // init data
+    // chord.matrix = function(x) {
+    //     if (!arguments.length) return matrix;
+    //     ns = (matrix = x) && matrix.length;
+    //     nt = matrix[0].length;
+    //     chords = groups = null;
+    //     return chord;
+    // };
+    //
     // init data
     chord.source = function(x) {
         if (!arguments.length) return source;
-        if (!matrix) return 0; // must call after matrix
-        if (arguments[0].length != ns) return 0; // wrong length of source argments!
-        source = x;
+        ns = (source = x) && source.length;
         chords = groups = null;
         return chord;
     };
-    
-    // init data
-    chord.target = function(x) {
-        if (!arguments.length) return target;
-        if (!matrix) return 0; // must call after matrix
-        if (arguments[0][0].length != nt) return 0; // wrong length of target arguments!
-        target = x[0];
-        chords = groups = null;
-        return chord;
-    };
+    //
+    // // init data
+    // chord.target = function(x) {
+    //     if (!arguments.length) return target;
+    //     if (!matrix) return 0; // must call after matrix
+    //     if (arguments[0][0].length != nt) return 0; // wrong length of target arguments!
+    //     target = x[0];
+    //     chords = groups = null;
+    //     return chord;
+    // };
     
     // set padding between arcs in radians
     chord.padding = function(x) {
