@@ -336,21 +336,21 @@
         "gas": 10.5,
         "renewable": 1.2,
         "petroleum": 10.0
-    }, {
+        }, {
         "state": "OH",
         "value": 51.7,
         "area": "ENC",
         "gas": 20.5,
         "renewable": 1.2,
         "petroleum": 30.0
-    }, {
+        }, {
         "state": "WV",
         "value": 21.7,
         "area": "SAT",
         "gas": 10.5,
         "renewable": 1.2,
         "petroleum": 10.0
-    }, {
+        }, {
         "state": "IA",
         "value": 21.7,
         "area": "WNC",

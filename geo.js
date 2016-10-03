@@ -21,7 +21,7 @@ var margin = { top: 40, right: 100, bottom: 40, left: 100 },
     centroid_y_recenter = 500;
 
 var bubbles_diameter = height * 3 / 4,
-    // x- and yshift for arcs/chords/force bubbles
+    // x- and y- shift for arcs/chords/force bubbles
     xshift = width / 2 - bubbles_diameter / 2,
     yshift = height / 2 - bubbles_diameter / 2,
     color = d3.scale.category10(), // associated with geographic division
@@ -33,12 +33,12 @@ var bubbles_diameter = height * 3 / 4,
 
 // really like the low 0.03 grav and 2 charge and larger 0.3 alpha
 var gravity = 0.035,         // 0.1, > 0; towards center of layout // make towards center of arcs!!!
-    charge = 2,             // -30; negative repels 
-    friction = 0.9,         // 0.5, [0,1]; 1 never slows
-    collision_alpha = 0.1, // (0,1); lower value is less jittery
-    alpha = 0.3,            // 0.1; // the longer it cools, the more uncollided it will be
-    linkStrength = 0.1,    // 0.1, [0,1];
-    force_ticks = 120;      // times force sim runs before displaying
+    charge = 2,              // -30; negative repels 
+    friction = 0.9,          // 0.5, [0,1]; 1 never slows
+    collision_alpha = 0.1,   // (0,1); lower value is less jittery
+    alpha = 0.3,             // 0.1; // the longer it cools, the more uncollided it will be
+    linkStrength = 0.1,      // 0.1, [0,1];
+    force_ticks = 120;       // times force sim runs before displaying
 
 var innerRad = bubbles_diameter * 1.25 / 2,
     outerRad = innerRad * 1.05,
@@ -51,6 +51,8 @@ var innerRad = bubbles_diameter * 1.25 / 2,
     chord_opacity = 0.54;
 
 // button slicing
+// using elecfile = data/test.json right now
+// test slice 2012
 var slice = 2012;
 
 /* SVG CANVAS */
@@ -178,14 +180,21 @@ function collide(aa) {
 // load data
 d3.json(elecfile, function (err, data) {
     if (err) throw err;
+    
+    // more error handling needed
+    // currently throws if data.slice != 2012 (our test button slicer)
     if (data.slice != slice) throw 'Error: wrong time slice.';
 
     // putting things together for nodes
+    // NODES is our array of state objects with correct data
     nodes = data.children; // (area, state, value, **fuels)
     var pack_info = pack.nodes(flatten_pack_matrix_arc(data))
                         .filter(function(d) { return !d.children });
     nodes = merge_pack_data(nodes, pack_info); //  (r, x_pack, y_pack)
 
+    // node indices
+    // check that these are correct later, by hand :)
+    // so not wrong data
     console.log("nodes_i, indicies of nodes")
     console.log(nodes_i);
 
@@ -209,6 +218,7 @@ d3.json(locfile, function(err, us) {
 
         // centroid data
         // voronoi() likes [0], [1] indexes to hold lat/long as well
+        
         // change alaska and hawaii
         if (d.id === 2) {
             centroid[0] = centroid[0] * 0.9;
@@ -233,6 +243,11 @@ d3.json(locfile, function(err, us) {
         // merge into global variable nodes
         Object.assign(nodes[nodes_i[state_id[d.id]]], centroid);
     });
+
+
+    console.log("nodes")
+    console.log(nodes);
+    
 
     // circles
     var circles = svg.selectAll("g") //g
@@ -274,7 +289,7 @@ d3.json(locfile, function(err, us) {
     // because else the function runs asynchronously
     // enters an undefined 'node' as the function
     // and is sad and won't run.
-    // ALSO I can't figure out how to move tick to accept 'circles'
+    // ALSO I can't figure out how to move on("tick") to accept 'circles'
     // as a function argument so it's going to be a local function qq
     
     // this manually ticks the force simulation
@@ -287,7 +302,11 @@ d3.json(locfile, function(err, us) {
     // chord/arc layout
     chord.data(force.nodes()).source(matrix_sources);
     // arcs are 'groups'
-    // data
+    
+    console.log(chord);
+    console.log(chord.groups);
+    
+    // chord data
     var arcs = svg.append("g").selectAll("path")
         .data(chord.groups)
         .enter().append("path")
